@@ -4,11 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=mason
-Group=mason
-WorkingDirectory=/home/mason/SlydInference
+User=root
+Group=root
+WorkingDirectory=/root/SLYDInference
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=/usr/bin/python3 /home/mason/SlydInference/launch_vllm_server.py --config /home/mason/SlydInference/vllm_config_port5002.json
+ExecStart=/usr/bin/python3 /root/SLYDInference/launch_vllm_server.py --config /root/SLYDInference/vllm_config_port5002.json
 Restart=always
 RestartSec=10
 StandardOutput=journal
