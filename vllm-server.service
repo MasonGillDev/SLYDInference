@@ -1,0 +1,18 @@
+[Unit]
+Description=vLLM Server on Port 5002
+After=network.target
+
+[Service]
+Type=simple
+User=mason
+Group=mason
+WorkingDirectory=/home/mason/SlydInference
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/python3 /home/mason/SlydInference/launch_vllm_server.py --config /home/mason/SlydInference/vllm_config_port5002.json
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
