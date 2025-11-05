@@ -1,0 +1,21 @@
+{
+  "model": "",
+  "served_model_name": "",
+  "host": "0.0.0.0",
+  "port": 8001,
+  "gpu_memory_utilization": 0.95,
+  "max_model_len": 2048,
+  "tensor_parallel_size": 1,
+  "dtype": "auto",
+  "trust_remote_code": false,
+  "max_num_seqs": 256,
+  "max_num_batched_tokens": null,
+  "quantization": null,
+  "kv_cache_dtype": "auto",
+  "enable_prefix_caching": false,
+  "enable_chunked_prefill": false,
+  "tokenizer": "None",
+  "revision": "None",
+  "download_dir": "None",
+  "load_format": "auto"
+}
