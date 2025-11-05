@@ -36,42 +36,17 @@ async function checkModel() {
 
 // Save vLLM configuration
 async function saveConfig() {
-    const maxBatchedTokens = document.getElementById('max-num-batched-tokens').value;
-    const quantization = document.getElementById('quantization').value;
-    const tokenizer = document.getElementById('tokenizer').value;
-    const revision = document.getElementById('revision').value;
-    const downloadDir = document.getElementById('download-dir').value;
-
     const config = {
         model: document.getElementById('model-id').value,
+        host: document.getElementById('host').value,
+        port: parseInt(document.getElementById('port').value),
+        max_num_seqs: parseInt(document.getElementById('max-num-seqs').value),
         gpu_memory_utilization: parseFloat(document.getElementById('gpu-memory').value),
         max_model_len: parseInt(document.getElementById('max-model-len').value),
         tensor_parallel_size: parseInt(document.getElementById('tensor-parallel').value),
         dtype: document.getElementById('dtype').value,
-        trust_remote_code: document.getElementById('trust-remote-code').checked,
-        max_num_seqs: parseInt(document.getElementById('max-num-seqs').value),
-        kv_cache_dtype: document.getElementById('kv-cache-dtype').value,
-        enable_prefix_caching: document.getElementById('enable-prefix-caching').checked,
-        enable_chunked_prefill: document.getElementById('enable-chunked-prefill').checked,
-        load_format: document.getElementById('load-format').value
+        trust_remote_code: document.getElementById('trust-remote-code').checked
     };
-
-    // Add optional fields only if they have values
-    if (maxBatchedTokens) {
-        config.max_num_batched_tokens = parseInt(maxBatchedTokens);
-    }
-    if (quantization) {
-        config.quantization = quantization;
-    }
-    if (tokenizer) {
-        config.tokenizer = tokenizer;
-    }
-    if (revision) {
-        config.revision = revision;
-    }
-    if (downloadDir) {
-        config.download_dir = downloadDir;
-    }
 
     try {
         const response = await fetch(`${window.API_BASE}/update-config`, {
@@ -94,47 +69,71 @@ async function saveConfig() {
     }
 }
 
-// Save HuggingFace token
-async function saveToken() {
-    const token = document.getElementById('hf-token').value;
-
-    if (!token) {
-        alert('Please enter a HuggingFace token');
+// Restart vLLM service
+async function restartService() {
+    if (!confirm('Are you sure you want to restart the vLLM service?')) {
         return;
     }
 
+    const statusDiv = document.getElementById('service-status');
+    statusDiv.textContent = 'Restarting service...';
+    statusDiv.className = 'status-message';
+    statusDiv.style.display = 'block';
+
     try {
-        const response = await fetch(`${window.API_BASE}/save-token`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token: token })
+        const response = await fetch(`${window.API_BASE}/restart-service`, {
+            method: 'POST'
         });
 
         const data = await response.json();
 
         if (data.success) {
-            alert('✓ Token saved successfully');
-            location.reload();
+            showStatus(statusDiv, '✓ Service restarted successfully', 'success');
+            setTimeout(() => {
+                checkServiceStatus();
+            }, 3000);
         } else {
-            alert('✗ Error saving token: ' + (data.message || 'Unknown error'));
+            showStatus(statusDiv, '✗ Error restarting service: ' + (data.message || 'Unknown error'), 'error');
         }
     } catch (error) {
-        alert('✗ Error saving token: ' + error.message);
+        showStatus(statusDiv, '✗ Error restarting service: ' + error.message, 'error');
     }
 }
 
-// Edit HuggingFace token
-function editToken() {
-    if (confirm('Are you sure you want to edit the HuggingFace token?')) {
-        location.reload();
+// Check service status
+async function checkServiceStatus() {
+    const statusDiv = document.getElementById('service-status');
+    statusDiv.textContent = 'Checking service status...';
+    statusDiv.className = 'status-message';
+    statusDiv.style.display = 'block';
+
+    try {
+        const response = await fetch(`${window.API_BASE}/service-status`);
+        const data = await response.json();
+
+        if (data.active) {
+            showStatus(statusDiv, '✓ Service is running', 'success');
+            
+            // Also check if the API is responding
+            try {
+                const apiResponse = await fetch(`http://${window.location.hostname}:${document.getElementById('port').value}/v1/models`);
+                if (apiResponse.ok) {
+                    statusDiv.innerHTML += '<br>✓ API is responding on port ' + document.getElementById('port').value;
+                }
+            } catch (e) {
+                statusDiv.innerHTML += '<br>⚠ API not responding (service may be starting)';
+            }
+        } else {
+            showStatus(statusDiv, '✗ Service is not running', 'error');
+        }
+    } catch (error) {
+        showStatus(statusDiv, '✗ Error checking status: ' + error.message, 'error');
     }
 }
 
-// Reset configuration to defaults
+// Reset to default configuration
 async function resetToDefaults() {
-    if (!confirm('Are you sure you want to reset all settings to factory defaults? This cannot be undone.')) {
+    if (!confirm('Are you sure you want to reset to default configuration?')) {
         return;
     }
 
@@ -156,110 +155,45 @@ async function resetToDefaults() {
     }
 }
 
-// Restart vLLM service
-async function restartService() {
-    if (!confirm('Are you sure you want to restart the vLLM service?')) {
-        return;
-    }
-
-    try {
-        const response = await fetch(`${window.API_BASE}/restart-service`, {
-            method: 'POST'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            alert('✓ Service restart initiated');
-            checkServiceStatus();
-        } else {
-            alert('✗ Error restarting service: ' + (data.message || 'Unknown error'));
-        }
-    } catch (error) {
-        alert('✗ Error restarting service: ' + error.message);
-    }
-}
-
-// Check service status
-async function checkServiceStatus() {
-    const statusCard = document.getElementById('service-status');
-    statusCard.textContent = 'Checking service status...';
-    statusCard.className = 'status-card show';
-
-    try {
-        const response = await fetch(`${window.API_BASE}/service-status`);
-        const data = await response.json();
-
-        let statusHTML = `
-            <h3 style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600;">Service Status</h3>
-            <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
-                <div><strong>Status:</strong> <span style="color: ${data.active ? '#10b981' : '#ef4444'}">${data.status || 'Unknown'}</span></div>
-                <div><strong>Running:</strong> ${data.active ? '✓ Yes' : '✗ No'}</div>
-            </div>
-        `;
-
-        if (data.details) {
-            statusHTML += `<pre style="margin-top: 0.75rem; padding: 0.75rem; background-color: #f8fafc; border-radius: 0.375rem; font-size: 0.75rem; overflow-x: auto;">${data.details}</pre>`;
-        }
-
-        statusCard.innerHTML = statusHTML;
-    } catch (error) {
-        statusCard.innerHTML = `<div style="color: #ef4444;">Error checking status: ${error.message}</div>`;
-    }
-}
-
-// Helper function to show status messages
-function showStatus(element, message, type) {
-    element.textContent = message;
-    element.className = `status-message ${type}`;
-    element.style.display = 'block';
-}
-
-// Toggle raw JSON editor visibility
+// Toggle raw JSON editor
 function toggleRawEditor() {
     const editor = document.getElementById('raw-editor');
     const toggleText = document.getElementById('toggle-text');
-    const isVisible = editor.style.display !== 'none';
-
-    if (isVisible) {
-        // Hide editor
-        editor.style.display = 'none';
-        toggleText.textContent = 'Show Raw JSON Editor';
-    } else {
-        // Show editor and load current config
+    
+    if (editor.style.display === 'none') {
+        // Load current config into editor
         loadRawConfig();
         editor.style.display = 'block';
         toggleText.textContent = 'Hide Raw JSON Editor';
-        // Scroll to editor
-        editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        editor.style.display = 'none';
+        toggleText.textContent = 'Show Raw JSON Editor';
     }
 }
 
-// Load current configuration into raw editor
+// Load raw configuration
 async function loadRawConfig() {
     try {
         const response = await fetch(`${window.API_BASE}/get-raw-config`);
         const data = await response.json();
-
+        
         if (data.success) {
-            const textarea = document.getElementById('raw-config-textarea');
-            textarea.value = JSON.stringify(data.config, null, 2);
+            document.getElementById('raw-config-textarea').value = JSON.stringify(data.config, null, 2);
         }
     } catch (error) {
         console.error('Error loading raw config:', error);
     }
 }
 
-// Save raw JSON configuration
+// Save raw configuration
 async function saveRawConfig() {
-    const textarea = document.getElementById('raw-config-textarea');
     const statusDiv = document.getElementById('raw-editor-status');
-
+    const rawConfig = document.getElementById('raw-config-textarea').value;
+    
     try {
-        // Parse JSON to validate it
-        const config = JSON.parse(textarea.value);
-
-        // Send to server
+        // Validate JSON
+        const config = JSON.parse(rawConfig);
+        
         const response = await fetch(`${window.API_BASE}/save-raw-config`, {
             method: 'POST',
             headers: {
@@ -272,28 +206,41 @@ async function saveRawConfig() {
 
         if (data.success) {
             showStatus(statusDiv, '✓ Raw configuration saved successfully', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            setTimeout(() => location.reload(), 1500);
         } else {
-            showStatus(statusDiv, '✗ Error saving: ' + (data.message || 'Unknown error'), 'error');
+            showStatus(statusDiv, '✗ Error saving configuration: ' + (data.message || 'Unknown error'), 'error');
         }
     } catch (error) {
         if (error instanceof SyntaxError) {
-            showStatus(statusDiv, '✗ Invalid JSON syntax. Please fix errors before saving.', 'error');
+            showStatus(statusDiv, '✗ Invalid JSON format', 'error');
         } else {
-            showStatus(statusDiv, '✗ Error: ' + error.message, 'error');
+            showStatus(statusDiv, '✗ Error saving configuration: ' + error.message, 'error');
         }
     }
 }
 
-// Cancel raw editing and hide editor
+// Cancel raw edit
 function cancelRawEdit() {
-    const editor = document.getElementById('raw-editor');
-    const toggleText = document.getElementById('toggle-text');
-    const statusDiv = document.getElementById('raw-editor-status');
-
-    editor.style.display = 'none';
-    toggleText.textContent = 'Show Raw JSON Editor';
-    statusDiv.style.display = 'none';
+    document.getElementById('raw-editor').style.display = 'none';
+    document.getElementById('toggle-text').textContent = 'Show Raw JSON Editor';
 }
+
+// Utility function to show status messages
+function showStatus(element, message, type) {
+    element.textContent = message;
+    element.className = 'status-message ' + type;
+    element.style.display = 'block';
+    
+    // Auto-hide after 5 seconds for non-error messages
+    if (type !== 'error') {
+        setTimeout(() => {
+            element.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Check service status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Check service status automatically on load
+    checkServiceStatus();
+});

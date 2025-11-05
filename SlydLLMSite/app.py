@@ -31,30 +31,24 @@ else:
 
 # Config file paths
 APP_CONFIG_PATH = 'app_config.json'
-VLLM_CONFIG_PATH = 'vllm_config.json'
+# Use the systemd service's config location
+VLLM_CONFIG_PATH = '/opt/vllm/vllm_config.json'
+# Fallback to local if /opt/vllm doesn't exist
+if not os.path.exists('/opt/vllm'):
+    VLLM_CONFIG_PATH = 'vllm_config.json'
 VLLM_CONFIG_DEFAULTS_PATH = 'vllm_config_defaults.json'
 
 # Default vLLM configuration (factory settings)
 DEFAULT_VLLM_CONFIG = {
-    'model': '',
-    'served_model_name': '',
+    'model': 'HuggingFaceTB/SmolLM3-3B',
     'host': '0.0.0.0',
-    'port': 8001,
-    'gpu_memory_utilization': 0.9,
-    'max_model_len': 2048,
+    'port': 5002,
+    'max_num_seqs': 32,
+    'gpu_memory_utilization': 0.7,
+    'max_model_len': 8192,
     'tensor_parallel_size': 1,
     'dtype': 'auto',
-    'trust_remote_code': False,
-    'max_num_seqs': 256,
-    'max_num_batched_tokens': None,
-    'quantization': None,
-    'kv_cache_dtype': 'auto',
-    'enable_prefix_caching': False,
-    'enable_chunked_prefill': False,
-    'tokenizer': None,
-    'revision': None,
-    'download_dir': None,
-    'load_format': 'auto'
+    'trust_remote_code': False
 }
 
 def load_app_config():

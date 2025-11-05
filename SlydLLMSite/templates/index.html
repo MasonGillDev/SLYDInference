@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLYD LLM Portal</title>
+    <title>vLLM Configuration Portal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,34 +11,16 @@
     <nav class="topbar">
         <div class="nav-content">
             <div class="logo-section">
-                <img src="https://www.slyd.com/images/SLYD-logo-300x86.webp" alt="SLYD Logo" class="logo">
+                <h1 style="color: white; margin: 0;">vLLM Configuration</h1>
             </div>
             <div class="nav-links">
-                <a href="https://nm-vllm.readthedocs.io/en/0.4.0/serving/openai_compatible_server.html" target="_blank" class="docs-link">docs</a>
+                <a href="http://localhost:5002/docs" target="_blank" class="docs-link">API Docs</a>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
     <div class="container">
-
-
-        <!-- HuggingFace Token Section -->
-        <div class="card">
-            <h2 class="section-title">HuggingFace Authentication</h2>
-            <div class="form-group">
-                <label for="hf-token">HuggingFace Token</label>
-                <div class="token-display">
-                    {% if masked_token %}
-                        <span class="masked-token">{{ masked_token }}</span>
-                        <button type="button" class="btn-secondary" onclick="editToken()">Edit</button>
-                    {% else %}
-                        <input type="password" id="hf-token" placeholder="hf_..." class="input-field">
-                        <button type="button" class="btn-secondary" onclick="saveToken()">Save</button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
 
         <!-- Model Configuration Section -->
         <div class="card">
@@ -50,13 +32,40 @@
                     <input type="text"
                            id="model-id"
                            value="{{ vllm_config.model }}"
-                           placeholder="e.g., meta-llama/Llama-2-7b-hf"
+                           placeholder="e.g., HuggingFaceTB/SmolLM3-3B"
                            class="input-field flex-1">
                     <button type="button" class="btn-check" onclick="checkModel()">Check</button>
                 </div>
                 <div id="model-status" class="status-message"></div>
             </div>
 
+        </div>
+
+        <!-- Network Configuration Section -->
+        <div class="card">
+            <h2 class="section-title">Network Settings</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="host">Host</label>
+                    <input type="text"
+                           id="host"
+                           value="{{ vllm_config.host }}"
+                           class="input-field">
+                    <small class="helper-text">Use 0.0.0.0 for all interfaces</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="port">Port</label>
+                    <input type="number"
+                           id="port"
+                           value="{{ vllm_config.port }}"
+                           min="1"
+                           max="65535"
+                           class="input-field">
+                    <small class="helper-text">API server port (default: 5002)</small>
+                </div>
+            </div>
         </div>
 
         <!-- Performance Configuration Section -->
@@ -73,7 +82,7 @@
                            min="0.1"
                            max="1.0"
                            class="input-field">
-                    <small class="helper-text">0.1 to 1.0 (default: 0.9)</small>
+                    <small class="helper-text">0.1 to 1.0 (default: 0.7)</small>
                 </div>
 
                 <div class="form-group">
@@ -81,30 +90,10 @@
                     <input type="number"
                            id="max-model-len"
                            value="{{ vllm_config.max_model_len }}"
+                           min="128"
+                           max="131072"
                            class="input-field">
-                    <small class="helper-text">Maximum context length</small>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="tensor-parallel">Tensor Parallel Size</label>
-                    <input type="number"
-                           id="tensor-parallel"
-                           value="{{ vllm_config.tensor_parallel_size }}"
-                           min="1"
-                           class="input-field">
-                    <small class="helper-text">Number of GPUs to use</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="dtype">Data Type</label>
-                    <select id="dtype" class="input-field">
-                        <option value="auto" {% if vllm_config.dtype == 'auto' %}selected{% endif %}>auto</option>
-                        <option value="float16" {% if vllm_config.dtype == 'float16' %}selected{% endif %}>float16</option>
-                        <option value="bfloat16" {% if vllm_config.dtype == 'bfloat16' %}selected{% endif %}>bfloat16</option>
-                        <option value="float32" {% if vllm_config.dtype == 'float32' %}selected{% endif %}>float32</option>
-                    </select>
+                    <small class="helper-text">Maximum context length (default: 8192)</small>
                 </div>
             </div>
 
@@ -113,124 +102,56 @@
                     <label for="max-num-seqs">Max Number of Sequences</label>
                     <input type="number"
                            id="max-num-seqs"
-                           value="{{ vllm_config.get('max_num_seqs', 256) }}"
+                           value="{{ vllm_config.max_num_seqs }}"
                            min="1"
+                           max="256"
                            class="input-field">
-                    <small class="helper-text">Max sequences per iteration (default: 256)</small>
+                    <small class="helper-text">Concurrent requests (default: 32)</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="max-num-batched-tokens">Max Batched Tokens</label>
+                    <label for="tensor-parallel">Tensor Parallel Size</label>
                     <input type="number"
-                           id="max-num-batched-tokens"
-                           value="{{ vllm_config.get('max_num_batched_tokens', '') }}"
-                           placeholder="Auto"
+                           id="tensor-parallel"
+                           value="{{ vllm_config.tensor_parallel_size }}"
+                           min="1"
+                           max="8"
                            class="input-field">
-                    <small class="helper-text">Leave empty for auto</small>
+                    <small class="helper-text">Number of GPUs to use (default: 1)</small>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="quantization">Quantization Method</label>
-                    <select id="quantization" class="input-field">
-                        <option value="" {% if not vllm_config.get('quantization') %}selected{% endif %}>None</option>
-                        <option value="awq" {% if vllm_config.get('quantization') == 'awq' %}selected{% endif %}>AWQ</option>
-                        <option value="gptq" {% if vllm_config.get('quantization') == 'gptq' %}selected{% endif %}>GPTQ</option>
-                        <option value="squeezellm" {% if vllm_config.get('quantization') == 'squeezellm' %}selected{% endif %}>SqueezeLLM</option>
-                        <option value="fp8" {% if vllm_config.get('quantization') == 'fp8' %}selected{% endif %}>FP8</option>
+                    <label for="dtype">Data Type</label>
+                    <select id="dtype" class="input-field">
+                        <option value="auto" {% if vllm_config.dtype == 'auto' %}selected{% endif %}>auto</option>
+                        <option value="float16" {% if vllm_config.dtype == 'float16' %}selected{% endif %}>float16</option>
+                        <option value="bfloat16" {% if vllm_config.dtype == 'bfloat16' %}selected{% endif %}>bfloat16</option>
+                        <option value="float32" {% if vllm_config.dtype == 'float32' %}selected{% endif %}>float32</option>
                     </select>
-                    <small class="helper-text">Weight quantization method</small>
+                    <small class="helper-text">Model precision (default: auto)</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="kv-cache-dtype">KV Cache Data Type</label>
-                    <select id="kv-cache-dtype" class="input-field">
-                        <option value="auto" {% if vllm_config.get('kv_cache_dtype', 'auto') == 'auto' %}selected{% endif %}>auto</option>
-                        <option value="fp8" {% if vllm_config.get('kv_cache_dtype') == 'fp8' %}selected{% endif %}>fp8</option>
-                        <option value="fp8_e5m2" {% if vllm_config.get('kv_cache_dtype') == 'fp8_e5m2' %}selected{% endif %}>fp8_e5m2</option>
-                    </select>
-                    <small class="helper-text">Data type for KV cache</small>
+                    <label class="checkbox-label">
+                        <input type="checkbox"
+                               id="trust-remote-code"
+                               {% if vllm_config.trust_remote_code %}checked{% endif %}>
+                        <span>Trust Remote Code</span>
+                    </label>
+                    <small class="helper-text">Allow custom model code</small>
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox"
-                           id="enable-prefix-caching"
-                           {% if vllm_config.get('enable_prefix_caching', False) %}checked{% endif %}>
-                    <span>Enable Prefix Caching</span>
-                </label>
-                <small class="helper-text">Cache common prompt prefixes for faster inference</small>
-            </div>
-
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox"
-                           id="enable-chunked-prefill"
-                           {% if vllm_config.get('enable_chunked_prefill', False) %}checked{% endif %}>
-                    <span>Enable Chunked Prefill</span>
-                </label>
-                <small class="helper-text">Process long prompts in chunks</small>
-            </div>
-
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox"
-                           id="trust-remote-code"
-                           {% if vllm_config.trust_remote_code %}checked{% endif %}>
-                    <span>Trust Remote Code</span>
-                </label>
-                <small class="helper-text">Allow execution of custom model code from HuggingFace</small>
             </div>
         </div>
 
-        <!-- Advanced Configuration Section -->
+        <!-- Service Status Card -->
         <div class="card">
-            <h2 class="section-title">Advanced Settings</h2>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="tokenizer">Tokenizer (optional)</label>
-                    <input type="text"
-                           id="tokenizer"
-                           value="{{ vllm_config.get('tokenizer', '') }}"
-                           placeholder="Leave empty to use model's tokenizer"
-                           class="input-field">
-                    <small class="helper-text">Custom tokenizer path or name</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="revision">Model Revision (optional)</label>
-                    <input type="text"
-                           id="revision"
-                           value="{{ vllm_config.get('revision', '') }}"
-                           placeholder="main"
-                           class="input-field">
-                    <small class="helper-text">Git branch/tag (default: main)</small>
-                </div>
+            <h2 class="section-title">Service Status</h2>
+            <div id="service-info">
+                <button type="button" class="btn-secondary" onclick="checkServiceStatus()">Check Status</button>
             </div>
-
-            <div class="form-group">
-                <label for="download-dir">Download Directory (optional)</label>
-                <input type="text"
-                       id="download-dir"
-                       value="{{ vllm_config.get('download_dir', '') }}"
-                       placeholder="/path/to/model/cache"
-                       class="input-field">
-                <small class="helper-text">Where to download/cache model weights</small>
-            </div>
-
-            <div class="form-group">
-                <label for="load-format">Load Format</label>
-                <select id="load-format" class="input-field">
-                    <option value="auto" {% if vllm_config.get('load_format', 'auto') == 'auto' %}selected{% endif %}>auto</option>
-                    <option value="pt" {% if vllm_config.get('load_format') == 'pt' %}selected{% endif %}>PyTorch</option>
-                    <option value="safetensors" {% if vllm_config.get('load_format') == 'safetensors' %}selected{% endif %}>SafeTensors</option>
-                    <option value="npcache" {% if vllm_config.get('load_format') == 'npcache' %}selected{% endif %}>NPCache</option>
-                </select>
-                <small class="helper-text">Format of model weights to load</small>
-            </div>
+            <div id="service-status" class="status-message" style="margin-top: 1rem;"></div>
         </div>
 
         <!-- Action Buttons -->
@@ -238,10 +159,9 @@
             <button type="button" class="btn-primary" onclick="saveConfig()">Save Configuration</button>
             <button type="button" class="btn-secondary" onclick="resetToDefaults()">Reset to Defaults</button>
             <button type="button" class="btn-secondary" onclick="restartService()">Restart Service</button>
-            <button type="button" class="btn-secondary" onclick="checkServiceStatus()">Check Status</button>
         </div>
 
-        <!-- Toggle Raw Editor Button -->
+        <!-- Raw JSON Editor Toggle -->
         <div style="margin-top: 1.5rem; text-align: center;">
             <button type="button" class="btn-toggle" onclick="toggleRawEditor()">
                 <span id="toggle-text">Show Raw JSON Editor</span>
@@ -253,9 +173,9 @@
             <div class="card">
                 <h2 class="section-title">Raw Configuration Editor</h2>
                 <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
-                    ⚠️ Advanced: Edit the raw JSON configuration. Make sure the JSON is valid before saving.
+                    ⚠️ Advanced: Edit the raw JSON configuration directly.
                 </p>
-                <textarea id="raw-config-textarea" class="raw-config-textarea" rows="20">{{ vllm_config | tojson(indent=2) }}</textarea>
+                <textarea id="raw-config-textarea" class="raw-config-textarea" rows="15">{{ vllm_config | tojson(indent=2) }}</textarea>
                 <div class="raw-editor-buttons">
                     <button type="button" class="btn-primary" onclick="saveRawConfig()">Save Raw Config</button>
                     <button type="button" class="btn-secondary" onclick="cancelRawEdit()">Cancel</button>
@@ -264,8 +184,16 @@
             </div>
         </div>
 
-        <!-- Service Status -->
-        <div id="service-status" class="status-card"></div>
+        <!-- API Endpoints Info -->
+        <div class="card" style="margin-top: 2rem;">
+            <h2 class="section-title">API Endpoints</h2>
+            <div style="font-family: monospace; background: #f5f5f5; padding: 1rem; border-radius: 4px;">
+                <p style="margin: 0.5rem 0;"><strong>Base URL:</strong> http://{{ request.host.split(':')[0] }}:{{ vllm_config.port }}</p>
+                <p style="margin: 0.5rem 0;"><strong>Models:</strong> GET /v1/models</p>
+                <p style="margin: 0.5rem 0;"><strong>Completions:</strong> POST /v1/completions</p>
+                <p style="margin: 0.5rem 0;"><strong>Chat:</strong> POST /v1/chat/completions</p>
+            </div>
+        </div>
     </div>
 
     <script>
