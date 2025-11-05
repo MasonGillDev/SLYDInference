@@ -102,13 +102,25 @@ echo -e "${YELLOW}Enabling service...${NC}"
 systemctl enable vllm.service
 echo -e "${GREEN}✓${NC} Service enabled (will start on boot)"
 
+# Start the service
+echo -e "${YELLOW}Starting vLLM service...${NC}"
+systemctl start vllm
+
+# Check if service started successfully
+sleep 2
+if systemctl is-active --quiet vllm; then
+    echo -e "${GREEN}✓${NC} Service started successfully"
+else
+    echo -e "${RED}✗${NC} Service failed to start"
+    echo "Check logs with: journalctl -u vllm -n 50"
+fi
+
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}    Service Setup Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Service Management Commands:"
-echo -e "${BLUE}Start service:${NC}   systemctl start vllm"
 echo -e "${BLUE}Stop service:${NC}    systemctl stop vllm"
 echo -e "${BLUE}Restart service:${NC} systemctl restart vllm"
 echo -e "${BLUE}Check status:${NC}    systemctl status vllm"
@@ -116,5 +128,5 @@ echo -e "${BLUE}View logs:${NC}       journalctl -u vllm -f"
 echo ""
 echo "Configuration file: /opt/vllm/vllm_config.json"
 echo ""
-echo -e "${YELLOW}To start the service now, run:${NC}"
-echo "  systemctl start vllm"
+echo -e "${GREEN}vLLM is now running on port 5002${NC}"
+echo "Test with: curl http://localhost:5002/v1/models"
