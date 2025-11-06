@@ -110,8 +110,10 @@ async function checkServiceStatus() {
             showStatus(statusDiv, '✓ Service is running', 'success');
             
             // Also check if the API is responding through the proxy
+            // Since nginx routes /v1/* directly to vLLM, we need to use the full URL
             try {
-                const apiResponse = await fetch(`${window.API_BASE}/v1/models`);
+                const currentHost = window.location.protocol + '//' + window.location.host;
+                const apiResponse = await fetch(`${currentHost}/v1/models`);
                 if (apiResponse.ok) {
                     statusDiv.innerHTML += '<br>✓ API is responding';
                 }
