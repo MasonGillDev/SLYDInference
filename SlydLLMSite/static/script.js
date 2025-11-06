@@ -58,11 +58,9 @@ async function saveConfig() {
         // Batching & Scheduling
         max_num_batched_tokens: document.getElementById('max-num-batched-tokens').value ? 
             parseInt(document.getElementById('max-num-batched-tokens').value) : null,
-        max_paddings: parseInt(document.getElementById('max-paddings').value),
         
         // Tokenizer Settings
         tokenizer: document.getElementById('tokenizer').value || null,
-        tokenizer_pool_size: parseInt(document.getElementById('tokenizer-pool-size').value),
         
         // API Settings
         chat_template: document.getElementById('chat-template').value || null,

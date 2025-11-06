@@ -240,16 +240,6 @@
                                class="input-field">
                         <small class="helper-text">Max tokens per batch (empty for auto)</small>
                     </div>
-
-                    <div class="form-group">
-                        <label for="max-paddings">Max Paddings</label>
-                        <input type="number"
-                               id="max-paddings"
-                               value="{{ vllm_config.max_paddings }}"
-                               min="1"
-                               class="input-field">
-                        <small class="helper-text">Max padding tokens (default: 256)</small>
-                    </div>
                 </div>
 
                 <!-- Tokenizer Settings -->
@@ -263,17 +253,6 @@
                                placeholder="Use model's tokenizer"
                                class="input-field">
                         <small class="helper-text">Override model tokenizer</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tokenizer-pool-size">Tokenizer Pool Size</label>
-                        <input type="number"
-                               id="tokenizer-pool-size"
-                               value="{{ vllm_config.tokenizer_pool_size }}"
-                               min="0"
-                               max="64"
-                               class="input-field">
-                        <small class="helper-text">Parallel tokenizers (0 = disabled)</small>
                     </div>
                 </div>
 

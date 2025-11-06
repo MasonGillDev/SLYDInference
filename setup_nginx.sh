@@ -9,7 +9,9 @@ apt-get update
 apt-get install -y nginx
 
 echo "Copying nginx configuration..."
-cp /home/mason/SlydInference/nginx.conf /etc/nginx/sites-available/slyd
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cp "$SCRIPT_DIR/nginx.conf" /etc/nginx/sites-available/slyd
 
 echo "Disabling default nginx site..."
 rm -f /etc/nginx/sites-enabled/default

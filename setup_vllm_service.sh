@@ -43,6 +43,11 @@ if [ ! -f "run_vllm_server.sh" ]; then
     exit 1
 fi
 
+if [ ! -f "build_vllm_command.py" ]; then
+    echo -e "${RED}Error: build_vllm_command.py not found${NC}"
+    exit 1
+fi
+
 echo -e "${GREEN}✓${NC} All prerequisites met"
 
 # Get current directory for absolute paths
@@ -53,6 +58,7 @@ echo -e "${YELLOW}Setting up vLLM directory...${NC}"
 mkdir -p /opt/vllm
 cp vllm_config.json /opt/vllm/
 cp run_vllm_server.sh /opt/vllm/
+cp build_vllm_command.py /opt/vllm/
 chmod +x /opt/vllm/run_vllm_server.sh
 echo -e "${GREEN}✓${NC} Files copied to /opt/vllm"
 
