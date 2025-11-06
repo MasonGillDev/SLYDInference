@@ -21,22 +21,18 @@ def build_command(config_file):
         
         # Handle different value types
         if isinstance(value, bool):
-            # Always pass boolean flags explicitly
-            # vLLM uses store_true for most flags, but we'll be explicit
-            if value:
+            # vLLM uses --flag/--no-flag pattern for boolean arguments
+            if key.startswith('enable_'):
+                # For enable_* flags, vLLM uses --enable-foo/--no-enable-foo
+                if value:
+                    cmd_parts.append(cli_arg)
+                else:
+                    # Add --no-enable-* for false
+                    no_flag = '--no-' + key.replace('_', '-')
+                    cmd_parts.append(no_flag)
+            elif value:
+                # For other boolean flags, only add if true (they're store_true)
                 cmd_parts.append(cli_arg)
-            else:
-                # For false values, add --no-{flag} or skip based on vLLM's expectations
-                # Most vLLM boolean flags are store_true, so false means don't add them
-                # But for some like enable_prefix_caching, we need to explicitly disable
-                if key.startswith('enable_'):
-                    # Convert enable_* false to disable-*
-                    disable_flag = '--disable-' + key.replace('enable_', '').replace('_', '-')
-                    cmd_parts.append(disable_flag)
-                elif key.startswith('disable_'):
-                    # disable_* false means we want the feature enabled (don't add the flag)
-                    pass
-                # For other boolean flags, false means don't add them
         elif value is not None and value != '':
             # Add parameter with its value
             cmd_parts.append(f"{cli_arg} {value}")
