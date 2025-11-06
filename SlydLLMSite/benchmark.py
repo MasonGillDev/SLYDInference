@@ -286,33 +286,111 @@ class ModelBenchmark:
             "average_tokens_per_request": total_tokens / len(successful) if successful else 0
         }
     
-    async def stress_test(self, max_concurrent: int = 20) -> Dict:
+    async def stress_test(self, max_concurrent: int = 100) -> Dict:
         """Gradually increase load to find breaking point"""
         results = []
         
-        for concurrent in [1, 5, 10, 15, max_concurrent]:
+        # More aggressive scaling: exponential growth until failure
+        test_levels = [1, 2, 4, 8, 16, 32, 64, 100, 150, 200]
+        
+        # Filter levels based on max_concurrent
+        test_levels = [l for l in test_levels if l <= max_concurrent]
+        
+        # Add custom max if not in list
+        if max_concurrent not in test_levels and max_concurrent > 1:
+            test_levels.append(max_concurrent)
+            test_levels.sort()
+        
+        last_success_rate = 100
+        found_breaking_point = False
+        
+        for concurrent in test_levels:
             print(f"Testing with {concurrent} concurrent clients...")
-            test_result = await self.concurrent_test(concurrent, requests_per_client=2)
+            
+            # Use more requests per client for higher loads to really stress test
+            requests_per_client = min(5, max(2, concurrent // 10))
+            
+            test_result = await self.concurrent_test(concurrent, requests_per_client=requests_per_client)
+            
+            success_rate = test_result.get("success_rate", 0)
+            mean_latency = test_result.get("latency_under_load", {}).get("mean", 0)
             
             results.append({
                 "concurrent_clients": concurrent,
-                "success_rate": test_result.get("success_rate", 0),
-                "mean_latency": test_result.get("latency_under_load", {}).get("mean", 0),
+                "success_rate": success_rate,
+                "mean_latency": mean_latency,
                 "p99_latency": test_result.get("latency_under_load", {}).get("p99", 0),
-                "requests_per_second": test_result.get("requests_per_second", 0)
+                "requests_per_second": test_result.get("requests_per_second", 0),
+                "total_requests": test_result.get("total_requests", 0),
+                "failed_requests": test_result.get("total_requests", 0) - test_result.get("successful_requests", 0)
             })
             
-            # Stop if success rate drops below 50%
-            if test_result.get("success_rate", 0) < 50:
+            # Dynamic stopping conditions
+            if success_rate < 50:
+                print(f"  → Breaking point found: {success_rate:.1f}% success rate")
+                found_breaking_point = True
+                break
+            elif success_rate < 95 and last_success_rate >= 95:
+                print(f"  → Performance degradation detected: {success_rate:.1f}% success rate")
+                # Continue testing but note degradation point
+            elif mean_latency > 10000:  # 10 seconds
+                print(f"  → Extreme latency detected: {mean_latency:.0f}ms")
+                found_breaking_point = True
+                break
+            
+            last_success_rate = success_rate
+            
+            # Small delay between levels to let system recover
+            await asyncio.sleep(1)
+        
+        # Calculate metrics
+        optimal = max(results, key=lambda x: x["requests_per_second"]) if results else {"concurrent_clients": 1}
+        sustainable = [r for r in results if r["success_rate"] > 90]
+        max_sustainable = max([r["concurrent_clients"] for r in sustainable], default=1) if sustainable else 1
+        
+        # Find degradation point (where success rate first drops below 95%)
+        degradation_point = None
+        for r in results:
+            if r["success_rate"] < 95:
+                degradation_point = r["concurrent_clients"]
                 break
         
         return {
             "test_type": "stress",
-            "max_concurrent_tested": max_concurrent,
+            "max_concurrent_tested": results[-1]["concurrent_clients"] if results else 1,
             "results_by_load": results,
-            "optimal_concurrent": max(results, key=lambda x: x["requests_per_second"])["concurrent_clients"],
-            "max_sustainable_load": max([r["concurrent_clients"] for r in results if r["success_rate"] > 90], default=1)
+            "optimal_concurrent": optimal["concurrent_clients"],
+            "max_sustainable_load": max_sustainable,
+            "degradation_point": degradation_point,
+            "breaking_point_found": found_breaking_point,
+            "peak_throughput": optimal["requests_per_second"],
+            "recommendations": self._generate_recommendations(results, found_breaking_point)
         }
+    
+    def _generate_recommendations(self, results: List[Dict], breaking_point_found: bool) -> Dict:
+        """Generate recommendations based on stress test results"""
+        if not results:
+            return {"error": "No test results"}
+        
+        last_result = results[-1]
+        optimal = max(results, key=lambda x: x["requests_per_second"])
+        
+        recommendations = {
+            "optimal_concurrency": optimal["concurrent_clients"],
+            "suggested_max_workers": min(optimal["concurrent_clients"] * 2, 100)
+        }
+        
+        if not breaking_point_found and last_result["success_rate"] > 95:
+            recommendations["note"] = "System handled maximum tested load well. Consider testing with higher concurrency."
+            recommendations["can_handle_more"] = True
+        elif last_result["success_rate"] < 50:
+            recommendations["note"] = "System reached breaking point. Use conservative concurrency settings."
+            recommendations["can_handle_more"] = False
+        else:
+            recommendations["note"] = "System showing signs of strain but still functional."
+            recommendations["can_handle_more"] = False
+        
+        return recommendations
 
 async def run_benchmark_suite(base_url: str, model_name: str, tests: List[str]) -> Dict:
     """Run selected benchmark tests"""

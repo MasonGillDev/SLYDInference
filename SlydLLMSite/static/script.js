@@ -457,11 +457,32 @@ function formatBenchmarkResults(results) {
         
         if (testName === 'stress') {
             output.push(`Maximum Concurrent Tested: ${testResult.max_concurrent_tested}`);
-            output.push(`Optimal Concurrent Clients: ${testResult.optimal_concurrent}`);
+            output.push(`Optimal Concurrent Clients: ${testResult.optimal_concurrent} (${testResult.peak_throughput.toFixed(2)} req/s peak)`);
             output.push(`Max Sustainable Load: ${testResult.max_sustainable_load} concurrent clients`);
+            if (testResult.degradation_point) {
+                output.push(`Performance Degradation Point: ${testResult.degradation_point} concurrent clients`);
+            }
+            output.push(`Breaking Point: ${testResult.breaking_point_found ? 'Found' : 'Not reached'}`);
+            
             output.push(`\nLoad Test Results:`);
             for (const load of testResult.results_by_load) {
-                output.push(`  ${load.concurrent_clients} clients: ${load.success_rate.toFixed(1)}% success, ${load.mean_latency.toFixed(2)}ms mean, ${load.requests_per_second.toFixed(2)} req/s`);
+                let marker = '';
+                if (load.success_rate < 50) marker = ' ❌';
+                else if (load.success_rate < 95) marker = ' ⚠️';
+                else if (load.success_rate === 100) marker = ' ✅';
+                
+                output.push(`  ${load.concurrent_clients} clients: ${load.success_rate.toFixed(1)}% success, ${load.mean_latency.toFixed(2)}ms mean, ${load.requests_per_second.toFixed(2)} req/s${marker}`);
+                
+                if (load.failed_requests > 0) {
+                    output.push(`    └─ Failed requests: ${load.failed_requests}`);
+                }
+            }
+            
+            if (testResult.recommendations) {
+                output.push(`\n📊 Recommendations:`);
+                output.push(`  Optimal Concurrency: ${testResult.recommendations.optimal_concurrency}`);
+                output.push(`  Suggested Max Workers: ${testResult.recommendations.suggested_max_workers}`);
+                output.push(`  Note: ${testResult.recommendations.note}`);
             }
         }
     }
