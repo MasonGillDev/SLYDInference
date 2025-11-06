@@ -412,7 +412,7 @@ async def run_benchmark_suite(base_url: str, model_name: str, tests: List[str]) 
             elif test_name == "throughput":
                 results["tests"][test_name] = await benchmark.throughput_test(duration_seconds=20)
             elif test_name == "stress":
-                results["tests"][test_name] = await benchmark.stress_test(max_concurrent=15)
+                results["tests"][test_name] = await benchmark.stress_test(max_concurrent=100)
         except Exception as e:
             results["tests"][test_name] = {"error": str(e)}
     
