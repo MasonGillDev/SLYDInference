@@ -18,15 +18,93 @@ class ModelBenchmark:
         self.model_name = model_name
         self.chat_endpoint = f"{base_url}/v1/chat/completions"
         
-        # Test prompts of varying lengths
+        # Test prompts of varying lengths - base templates
         self.test_prompts = {
-            "short": "What is 2+2?",
-            "medium": "Explain the concept of machine learning in simple terms. Include examples of how it's used in everyday applications.",
-            "long": """Write a detailed analysis of the impact of artificial intelligence on modern society. 
-            Consider the following aspects: economic implications, job market transformation, ethical considerations, 
-            privacy concerns, educational changes, healthcare advancements, and potential future scenarios. 
-            Provide specific examples and discuss both positive and negative impacts."""
+            "short": [
+                "What is {}+{}?",
+                "Define the word '{}'",
+                "What year was {} founded?",
+                "How many {} are in a {}?",
+                "What is the capital of {}?"
+            ],
+            "medium": [
+                "Explain the concept of {} in simple terms. Include examples.",
+                "What are the main differences between {} and {}?",
+                "Describe the process of {} and its importance.",
+                "List {} benefits of {} and explain each briefly.",
+                "How does {} affect {} in modern society?"
+            ],
+            "long": [
+                "Write a detailed analysis of {}. Consider multiple perspectives and provide examples.",
+                "Discuss the historical development of {} from {} to present day.",
+                "Compare and contrast {} approaches to {}. Include advantages and disadvantages.",
+                "Analyze the impact of {} on {}. Consider economic, social, and environmental factors.",
+                "Explain how {} works, its applications, and future potential in the field of {}."
+            ]
         }
+        
+        # Random words for generating unique prompts
+        self.random_words = {
+            "concepts": ["democracy", "quantum computing", "blockchain", "evolution", "capitalism", 
+                        "artificial intelligence", "climate change", "renewable energy", "genetics"],
+            "numbers": list(range(1, 100)),
+            "companies": ["Apple", "Google", "Microsoft", "Amazon", "Tesla", "IBM", "Intel"],
+            "countries": ["France", "Japan", "Brazil", "Canada", "Australia", "India", "Germany"],
+            "objects": ["dozen", "kilometer", "gallon", "century", "byte", "atom"],
+            "fields": ["medicine", "education", "technology", "agriculture", "finance", "transportation"]
+        }
+    
+    def generate_unique_prompt(self, prompt_type: str) -> str:
+        """Generate a unique prompt by filling in template with random values"""
+        templates = self.test_prompts[prompt_type]
+        template = random.choice(templates)
+        
+        # Fill in the template based on its requirements
+        if prompt_type == "short":
+            if "{}+{}" in template:
+                return template.format(random.randint(1, 100), random.randint(1, 100))
+            elif "word" in template:
+                return template.format(random.choice(self.random_words["concepts"]))
+            elif "founded" in template:
+                return template.format(random.choice(self.random_words["companies"]))
+            elif "How many" in template:
+                return template.format(random.choice(self.random_words["objects"]), 
+                                     random.choice(self.random_words["objects"]))
+            else:  # capital
+                return template.format(random.choice(self.random_words["countries"]))
+        
+        elif prompt_type == "medium":
+            concept1 = random.choice(self.random_words["concepts"])
+            concept2 = random.choice(self.random_words["concepts"])
+            field = random.choice(self.random_words["fields"])
+            num = random.randint(3, 7)
+            
+            if "differences between" in template:
+                return template.format(concept1, concept2)
+            elif "List {}" in template:
+                return template.format(num, concept1)
+            elif "How does" in template:
+                return template.format(concept1, field)
+            else:
+                return template.format(concept1)
+        
+        else:  # long
+            concept1 = random.choice(self.random_words["concepts"])
+            concept2 = random.choice(self.random_words["concepts"])
+            field1 = random.choice(self.random_words["fields"])
+            field2 = random.choice(self.random_words["fields"])
+            year = random.randint(1900, 2020)
+            
+            if "historical development" in template:
+                return template.format(concept1, year)
+            elif "Compare and contrast" in template:
+                return template.format(random.randint(2, 5), concept1)
+            elif "impact of" in template:
+                return template.format(concept1, field1)
+            elif "future potential" in template:
+                return template.format(concept1, field1)
+            else:
+                return template.format(concept1)
     
     async def single_request(self, session: aiohttp.ClientSession, prompt: str, max_tokens: int = 256) -> Dict:
         """Execute a single request and measure metrics"""
@@ -68,9 +146,9 @@ class ModelBenchmark:
         results = []
         async with aiohttp.ClientSession() as session:
             for i in range(num_requests):
-                # Use different prompt lengths
+                # Use different prompt lengths with unique content
                 prompt_type = ["short", "medium", "long"][i % 3]
-                prompt = self.test_prompts[prompt_type]
+                prompt = self.generate_unique_prompt(prompt_type)
                 
                 result = await self.single_request(session, prompt)
                 if result["success"]:
@@ -119,7 +197,8 @@ class ModelBenchmark:
             results = []
             async with aiohttp.ClientSession() as session:
                 for i in range(requests_per_client):
-                    prompt = self.test_prompts[["short", "medium", "long"][i % 3]]
+                    prompt_type = ["short", "medium", "long"][i % 3]
+                    prompt = self.generate_unique_prompt(prompt_type)
                     result = await self.single_request(session, prompt)
                     results.append(result)
             return results
@@ -175,7 +254,8 @@ class ModelBenchmark:
                 batch_size = 10
                 tasks = []
                 for _ in range(batch_size):
-                    prompt = random.choice(list(self.test_prompts.values()))
+                    prompt_type = random.choice(["short", "medium", "long"])
+                    prompt = self.generate_unique_prompt(prompt_type)
                     tasks.append(self.single_request(session, prompt, max_tokens=128))
                 
                 batch_results = await asyncio.gather(*tasks)
