@@ -45,6 +45,8 @@ echo -e "${GREEN}✓${NC} Flask installed"
 
 # Copy SlydLLMSite to /opt
 echo -e "${YELLOW}Setting up SlydLLMSite...${NC}"
+# Remove old version if it exists
+rm -rf /opt/SlydLLMSite
 cp -r SlydLLMSite /opt/
 echo -e "${GREEN}✓${NC} SlydLLMSite copied to /opt"
 
