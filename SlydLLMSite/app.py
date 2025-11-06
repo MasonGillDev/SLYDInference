@@ -4,6 +4,10 @@ import os
 import subprocess
 import requests
 import time
+import asyncio
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from benchmark import run_benchmark_suite
 
 # Simple Flask app without any proxy configuration
 app = Flask(__name__)
@@ -280,6 +284,42 @@ def chat_completion():
         return jsonify({'success': False, 'message': 'Request timed out'})
     except requests.exceptions.ConnectionError:
         return jsonify({'success': False, 'message': 'Cannot connect to vLLM server. Is it running?'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/run-benchmark', methods=['POST'])
+def run_benchmark():
+    """Run benchmark tests on the vLLM model"""
+    try:
+        data = request.json
+        test_type = data.get('test_type', 'quick')
+        
+        # Get vLLM config to know the port
+        config = load_vllm_config()
+        base_url = f"http://localhost:{config.get('port', 5002)}"
+        model_name = config.get('model', 'HuggingFaceTB/SmolLM3-3B')
+        
+        # Define test suites
+        if test_type == 'quick':
+            tests = ['latency']
+        elif test_type == 'standard':
+            tests = ['latency', 'concurrent', 'throughput']
+        elif test_type == 'full':
+            tests = ['latency', 'concurrent', 'throughput', 'stress']
+        elif test_type == 'stress':
+            tests = ['stress']
+        else:
+            # Individual test type
+            tests = [test_type]
+        
+        # Run the benchmarks asynchronously
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        results = loop.run_until_complete(run_benchmark_suite(base_url, model_name, tests))
+        loop.close()
+        
+        return jsonify({'success': True, 'results': results})
+        
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 

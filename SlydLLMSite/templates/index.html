@@ -449,6 +449,48 @@
             
         </div> <!-- End grid -->
 
+        <!-- Benchmark Section -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <h2 class="section-title">📊 Benchmark Tests</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Run performance tests on your vLLM model to measure latency, throughput, and concurrent handling.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <button type="button" class="btn-primary" onclick="runBenchmark('quick')">
+                    Quick Test
+                    <small style="display: block; font-weight: normal; margin-top: 0.25rem;">Latency only (~10 requests)</small>
+                </button>
+                <button type="button" class="btn-secondary" onclick="runBenchmark('standard')">
+                    Standard Test
+                    <small style="display: block; font-weight: normal; margin-top: 0.25rem;">Latency + Concurrent + Throughput</small>
+                </button>
+                <button type="button" class="btn-secondary" onclick="runBenchmark('full')">
+                    Full Test
+                    <small style="display: block; font-weight: normal; margin-top: 0.25rem;">All tests including stress</small>
+                </button>
+                <button type="button" class="btn-secondary" onclick="runBenchmark('stress')">
+                    Stress Test
+                    <small style="display: block; font-weight: normal; margin-top: 0.25rem;">Find breaking point</small>
+                </button>
+            </div>
+            
+            <!-- Benchmark Loading Indicator -->
+            <div id="benchmark-loading" class="chat-loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span id="benchmark-loading-text">Running benchmark tests...</span>
+            </div>
+            
+            <!-- Benchmark Error Display -->
+            <div id="benchmark-error" class="status-message error" style="display: none;"></div>
+            
+            <!-- Benchmark Results Display -->
+            <div id="benchmark-results" style="display: none;">
+                <h3 style="margin: 1rem 0 0.5rem;">Test Results</h3>
+                <div id="benchmark-results-content" style="background: var(--background); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color); font-family: monospace; white-space: pre-wrap;"></div>
+            </div>
+        </div>
+
         <!-- Raw JSON Editor Toggle -->
         <div style="margin-top: 1.5rem; text-align: center;">
             <button type="button" class="btn-toggle" onclick="toggleRawEditor()">

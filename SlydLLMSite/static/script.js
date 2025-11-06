@@ -340,6 +340,135 @@ function clearChat() {
     document.getElementById('chat-loading').style.display = 'none';
 }
 
+// Run benchmark tests
+async function runBenchmark(testType) {
+    // Hide previous results and errors
+    document.getElementById('benchmark-results').style.display = 'none';
+    document.getElementById('benchmark-error').style.display = 'none';
+    
+    // Show loading
+    const loadingDiv = document.getElementById('benchmark-loading');
+    const loadingText = document.getElementById('benchmark-loading-text');
+    loadingDiv.style.display = 'flex';
+    
+    // Update loading text based on test type
+    const testMessages = {
+        'quick': 'Running quick latency test...',
+        'standard': 'Running standard benchmark suite...',
+        'full': 'Running comprehensive benchmark tests...',
+        'stress': 'Running stress test to find limits...'
+    };
+    loadingText.textContent = testMessages[testType] || 'Running benchmark tests...';
+    
+    try {
+        const response = await fetch(`${window.API_BASE}/run-benchmark`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ test_type: testType })
+        });
+        
+        const data = await response.json();
+        
+        // Hide loading
+        loadingDiv.style.display = 'none';
+        
+        if (data.success) {
+            // Format and display results
+            const results = data.results;
+            const resultsContent = document.getElementById('benchmark-results-content');
+            resultsContent.textContent = formatBenchmarkResults(results);
+            document.getElementById('benchmark-results').style.display = 'block';
+        } else {
+            // Show error
+            const errorDiv = document.getElementById('benchmark-error');
+            errorDiv.textContent = `Error: ${data.message}`;
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        // Hide loading
+        loadingDiv.style.display = 'none';
+        
+        // Show error
+        const errorDiv = document.getElementById('benchmark-error');
+        errorDiv.textContent = `Error: ${error.message}`;
+        errorDiv.style.display = 'block';
+    }
+}
+
+// Format benchmark results for display
+function formatBenchmarkResults(results) {
+    let output = [];
+    output.push(`Benchmark Results - ${new Date(results.timestamp).toLocaleString()}`);
+    output.push(`Model: ${results.model}`);
+    output.push('=' + '='.repeat(60));
+    
+    for (const [testName, testResult] of Object.entries(results.tests)) {
+        if (testResult.error) {
+            output.push(`\n${testName.toUpperCase()} TEST: ERROR - ${testResult.error}`);
+            continue;
+        }
+        
+        output.push(`\n${testName.toUpperCase()} TEST:`);
+        output.push('-'.repeat(40));
+        
+        if (testName === 'latency') {
+            output.push(`Requests: ${testResult.num_requests} | Success Rate: ${testResult.success_rate.toFixed(1)}%`);
+            output.push(`\nLatency (ms):`);
+            output.push(`  Mean:   ${testResult.latency.mean.toFixed(2)}`);
+            output.push(`  Median: ${testResult.latency.median.toFixed(2)}`);
+            output.push(`  P95:    ${testResult.latency.p95.toFixed(2)}`);
+            output.push(`  P99:    ${testResult.latency.p99.toFixed(2)}`);
+            output.push(`  Min:    ${testResult.latency.min.toFixed(2)}`);
+            output.push(`  Max:    ${testResult.latency.max.toFixed(2)}`);
+            output.push(`\nThroughput:`);
+            output.push(`  Mean: ${testResult.throughput.mean_tokens_per_second.toFixed(1)} tokens/sec`);
+            output.push(`  Max:  ${testResult.throughput.max_tokens_per_second.toFixed(1)} tokens/sec`);
+            output.push(`  Total Tokens: ${testResult.throughput.total_tokens}`);
+        }
+        
+        if (testName === 'concurrent') {
+            output.push(`Concurrent Clients: ${testResult.num_concurrent_clients}`);
+            output.push(`Requests per Client: ${testResult.requests_per_client}`);
+            output.push(`Total Requests: ${testResult.total_requests} | Success: ${testResult.successful_requests}`);
+            output.push(`Success Rate: ${testResult.success_rate.toFixed(1)}%`);
+            output.push(`\nLatency Under Load (ms):`);
+            output.push(`  Mean:   ${testResult.latency_under_load.mean.toFixed(2)}`);
+            output.push(`  Median: ${testResult.latency_under_load.median.toFixed(2)}`);
+            output.push(`  P95:    ${testResult.latency_under_load.p95.toFixed(2)}`);
+            output.push(`  P99:    ${testResult.latency_under_load.p99.toFixed(2)}`);
+            output.push(`\nThroughput Under Load:`);
+            output.push(`  Mean: ${testResult.throughput_under_load.mean_tokens_per_second.toFixed(1)} tokens/sec`);
+            output.push(`  Aggregate: ${testResult.throughput_under_load.aggregate_tokens_per_second.toFixed(1)} tokens/sec`);
+            output.push(`  Requests/sec: ${testResult.requests_per_second.toFixed(2)}`);
+        }
+        
+        if (testName === 'throughput') {
+            output.push(`Test Duration: ${testResult.test_duration.toFixed(1)} seconds`);
+            output.push(`Total Requests: ${testResult.total_requests} | Success: ${testResult.successful_requests}`);
+            output.push(`Success Rate: ${testResult.success_rate.toFixed(1)}%`);
+            output.push(`\nPerformance:`);
+            output.push(`  Requests/sec: ${testResult.requests_per_second.toFixed(2)}`);
+            output.push(`  Tokens/sec: ${testResult.tokens_per_second.toFixed(1)}`);
+            output.push(`  Total Tokens: ${testResult.total_tokens_processed}`);
+            output.push(`  Avg Tokens/Request: ${testResult.average_tokens_per_request.toFixed(1)}`);
+        }
+        
+        if (testName === 'stress') {
+            output.push(`Maximum Concurrent Tested: ${testResult.max_concurrent_tested}`);
+            output.push(`Optimal Concurrent Clients: ${testResult.optimal_concurrent}`);
+            output.push(`Max Sustainable Load: ${testResult.max_sustainable_load} concurrent clients`);
+            output.push(`\nLoad Test Results:`);
+            for (const load of testResult.results_by_load) {
+                output.push(`  ${load.concurrent_clients} clients: ${load.success_rate.toFixed(1)}% success, ${load.mean_latency.toFixed(2)}ms mean, ${load.requests_per_second.toFixed(2)} req/s`);
+            }
+        }
+    }
+    
+    return output.join('\n');
+}
+
 // Check service status on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Check service status automatically on load
