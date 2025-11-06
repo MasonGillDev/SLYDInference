@@ -1,43 +1,9 @@
-// Check if HuggingFace model is valid
-async function checkModel() {
-    const modelId = document.getElementById('model-id').value;
-    const statusDiv = document.getElementById('model-status');
-
-    if (!modelId) {
-        showStatus(statusDiv, 'Please enter a model ID', 'error');
-        return;
-    }
-
-    // Show loading state
-    statusDiv.textContent = 'Checking model...';
-    statusDiv.className = 'status-message';
-    statusDiv.style.display = 'block';
-
-    try {
-        const response = await fetch(`${window.API_BASE}/check-model`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ model_id: modelId })
-        });
-
-        const data = await response.json();
-
-        if (data.valid) {
-            showStatus(statusDiv, '✓ Model is valid and accessible', 'success');
-        } else {
-            showStatus(statusDiv, '✗ ' + (data.message || 'Model not found'), 'error');
-        }
-    } catch (error) {
-        showStatus(statusDiv, '✗ Error checking model: ' + error.message, 'error');
-    }
-}
+// Check model function is no longer needed since model is read-only
 
 // Save vLLM configuration
 async function saveConfig() {
     const config = {
-        model: document.getElementById('model-id').value,
+        // Model is read-only, get from original config
         host: document.getElementById('host').value,
         port: parseInt(document.getElementById('port').value),
         max_num_seqs: parseInt(document.getElementById('max-num-seqs').value),

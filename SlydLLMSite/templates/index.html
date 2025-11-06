@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>vLLM Configuration Portal</title>
+    <title>SLYD vLLM Control Panel</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -12,7 +12,7 @@
         <div class="nav-content">
             <div class="logo-section" style="display: flex; align-items: center;">
                 <img src="https://www.slyd.com/images/SLYD-logo-300x86.webp" alt="SLYD Logo" style="height: 40px; margin-right: 20px;">
-                <h1 style="color: white; margin: 0;">vLLM Configuration</h1>
+                <h1 style="color: white; margin: 0; font-size: 1.5rem; font-weight: 500;">vLLM Control Panel</h1>
             </div>
             <div class="nav-links">
                 <a href="https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html" target="_blank" class="docs-link">API Docs</a>
@@ -21,61 +21,42 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container">
+    <div class="container" style="max-width: 1600px;">
 
-        <!-- Model Configuration Section -->
-        <div class="card">
-            <h2 class="section-title">Model Configuration</h2>
-
-            <div class="form-group">
-                <label for="model-id">HuggingFace Model ID</label>
-                <div class="input-with-button">
-                    <input type="text"
-                           id="model-id"
-                           value="{{ vllm_config.model }}"
-                           placeholder="e.g., HuggingFaceTB/SmolLM3-3B"
-                           class="input-field flex-1">
-                    <button type="button" class="btn-check" onclick="checkModel()">Check</button>
-                </div>
-                <div id="model-status" class="status-message"></div>
-            </div>
-
-        </div>
-
-        <!-- Network Configuration Section -->
-        <div class="card">
-            <h2 class="section-title">Network Settings</h2>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="host">Host</label>
-                    <input type="text"
-                           id="host"
-                           value="{{ vllm_config.host }}"
-                           class="input-field">
-                    <small class="helper-text">Use 0.0.0.0 for all interfaces</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="port">Port</label>
-                    <input type="number"
-                           id="port"
-                           value="{{ vllm_config.port }}"
-                           min="1"
-                           max="65535"
-                           class="input-field">
-                    <small class="helper-text">API server port (default: 5002)</small>
+        <!-- Top Grid: Model, Network, Performance -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+            
+            <!-- Model Information Section -->
+            <div class="card">
+                <h2 class="section-title">📦 Active Model</h2>
+                <div style="padding: 0.5rem 0;">
+                    <p style="font-size: 1.1rem; color: var(--primary-color); margin: 0.5rem 0; font-weight: 500;">
+                        {{ vllm_config.model }}
+                    </p>
+                    <small class="helper-text" style="display: block; margin-top: 1rem;">To change the model, edit vllm_config.json directly</small>
                 </div>
             </div>
-        </div>
 
-        <!-- Performance Configuration Section -->
-        <div class="card">
-            <h2 class="section-title">Performance Settings</h2>
-
-            <div class="form-row">
+            <!-- Control Panel -->
+            <div class="card">
+                <h2 class="section-title">🎛️ Control Panel</h2>
+                <button type="button" class="btn-primary" onclick="saveConfig()" style="width: 100%; margin-bottom: 0.5rem;">
+                    Save Configuration
+                </button>
+                <button type="button" class="btn-secondary" onclick="restartService()" style="width: 100%; margin-bottom: 0.5rem;">
+                    Restart Service
+                </button>
+                <button type="button" class="btn-secondary" onclick="checkServiceStatus()" style="width: 100%;">
+                    Check Status
+                </button>
+                <div id="service-status" class="status-message" style="margin-top: 1rem;"></div>
+            </div>
+            
+            <!-- Performance Configuration Section (Compact) -->
+            <div class="card">
+                <h2 class="section-title">⚡ Performance</h2>
                 <div class="form-group">
-                    <label for="gpu-memory">GPU Memory Utilization</label>
+                    <label for="gpu-memory">GPU Memory</label>
                     <input type="number"
                            id="gpu-memory"
                            value="{{ vllm_config.gpu_memory_utilization }}"
@@ -83,74 +64,83 @@
                            min="0.1"
                            max="1.0"
                            class="input-field">
-                    <small class="helper-text">0.1 to 1.0 (default: 0.7)</small>
+                    <small class="helper-text">0.1 to 1.0</small>
                 </div>
-
                 <div class="form-group">
-                    <label for="max-model-len">Max Model Length</label>
-                    <input type="number"
-                           id="max-model-len"
-                           value="{{ vllm_config.max_model_len }}"
-                           min="128"
-                           max="131072"
-                           class="input-field">
-                    <small class="helper-text">Maximum context length (default: 8192)</small>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="max-num-seqs">Max Number of Sequences</label>
+                    <label for="max-num-seqs">Max Sequences</label>
                     <input type="number"
                            id="max-num-seqs"
                            value="{{ vllm_config.max_num_seqs }}"
                            min="1"
                            max="256"
                            class="input-field">
-                    <small class="helper-text">Concurrent requests (default: 32)</small>
+                    <small class="helper-text">Concurrent requests</small>
                 </div>
+            </div>
+            
+        </div> <!-- End top grid -->
 
-                <div class="form-group">
-                    <label for="tensor-parallel">Tensor Parallel Size</label>
-                    <input type="number"
-                           id="tensor-parallel"
-                           value="{{ vllm_config.tensor_parallel_size }}"
-                           min="1"
-                           max="8"
-                           class="input-field">
-                    <small class="helper-text">Number of GPUs to use (default: 1)</small>
+        <!-- Second Grid: Model & Hardware Settings -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+            
+            <div class="card">
+                <h2 class="section-title">📊 Model Configuration</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="max-model-len">Max Model Length</label>
+                        <input type="number"
+                               id="max-model-len"
+                               value="{{ vllm_config.max_model_len }}"
+                               min="128"
+                               max="131072"
+                               class="input-field">
+                        <small class="helper-text">Maximum context length</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="dtype">Data Type</label>
+                        <select id="dtype" class="input-field">
+                            <option value="auto" {% if vllm_config.dtype == 'auto' %}selected{% endif %}>auto</option>
+                            <option value="float16" {% if vllm_config.dtype == 'float16' %}selected{% endif %}>float16</option>
+                            <option value="bfloat16" {% if vllm_config.dtype == 'bfloat16' %}selected{% endif %}>bfloat16</option>
+                            <option value="float32" {% if vllm_config.dtype == 'float32' %}selected{% endif %}>float32</option>
+                        </select>
+                        <small class="helper-text">Model precision</small>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="dtype">Data Type</label>
-                    <select id="dtype" class="input-field">
-                        <option value="auto" {% if vllm_config.dtype == 'auto' %}selected{% endif %}>auto</option>
-                        <option value="float16" {% if vllm_config.dtype == 'float16' %}selected{% endif %}>float16</option>
-                        <option value="bfloat16" {% if vllm_config.dtype == 'bfloat16' %}selected{% endif %}>bfloat16</option>
-                        <option value="float32" {% if vllm_config.dtype == 'float32' %}selected{% endif %}>float32</option>
-                    </select>
-                    <small class="helper-text">Model precision (default: auto)</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox"
-                               id="trust-remote-code"
-                               {% if vllm_config.trust_remote_code %}checked{% endif %}>
-                        <span>Trust Remote Code</span>
-                    </label>
-                    <small class="helper-text">Allow custom model code</small>
+            <div class="card">
+                <h2 class="section-title">🖥️ Hardware & Security</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tensor-parallel">Tensor Parallel Size</label>
+                        <input type="number"
+                               id="tensor-parallel"
+                               value="{{ vllm_config.tensor_parallel_size }}"
+                               min="1"
+                               max="8"
+                               class="input-field">
+                        <small class="helper-text">Number of GPUs to use</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox"
+                                   id="trust-remote-code"
+                                   {% if vllm_config.trust_remote_code %}checked{% endif %}>
+                            <span>Trust Remote Code</span>
+                        </label>
+                        <small class="helper-text">Allow custom model code</small>
+                    </div>
                 </div>
             </div>
+            
         </div>
 
         <!-- Advanced Options Section (Collapsible) -->
         <div class="card">
             <h2 class="section-title" style="cursor: pointer; user-select: none;" onclick="toggleAdvancedOptions()">
                 <span id="advanced-arrow" style="display: inline-block; transition: transform 0.3s;">▶</span>
-                Advanced Options
+                ⚙️ Advanced Options
             </h2>
             
             <div id="advanced-options" style="display: none;">
@@ -368,9 +358,12 @@
             </div>
         </div>
 
-        <!-- Chat Test Interface -->
-        <div class="card">
-            <h2 class="section-title">Test Chat Interface</h2>
+        <!-- Grid for Chat and Control Panel -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            
+            <!-- Chat Test Interface -->
+            <div class="card">
+                <h2 class="section-title">🤖 Test Chat Interface</h2>
             <div class="chat-container">
                 <div class="chat-input-group">
                     <textarea id="chat-prompt" 
@@ -431,21 +424,30 @@
             </div>
         </div>
 
-        <!-- Service Status Card -->
-        <div class="card">
-            <h2 class="section-title">Service Status</h2>
-            <div id="service-info">
-                <button type="button" class="btn-secondary" onclick="checkServiceStatus()">Check Status</button>
+            <!-- Network Configuration Section -->
+            <div class="card">
+                <h2 class="section-title">🌐 Network Settings</h2>
+                <div class="form-group">
+                    <label for="host">Host</label>
+                    <input type="text"
+                           id="host"
+                           value="{{ vllm_config.host }}"
+                           class="input-field">
+                    <small class="helper-text">Use 0.0.0.0 for all interfaces</small>
+                </div>
+                <div class="form-group">
+                    <label for="port">Port</label>
+                    <input type="number"
+                           id="port"
+                           value="{{ vllm_config.port }}"
+                           min="1"
+                           max="65535"
+                           class="input-field">
+                    <small class="helper-text">API server port (default: 5002)</small>
+                </div>
             </div>
-            <div id="service-status" class="status-message" style="margin-top: 1rem;"></div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button type="button" class="btn-primary" onclick="saveConfig()">Save Configuration</button>
-            <button type="button" class="btn-secondary" onclick="resetToDefaults()">Reset to Defaults</button>
-            <button type="button" class="btn-secondary" onclick="restartService()">Restart Service</button>
-        </div>
+            
+        </div> <!-- End grid -->
 
         <!-- Raw JSON Editor Toggle -->
         <div style="margin-top: 1.5rem; text-align: center;">
@@ -470,17 +472,53 @@
             </div>
         </div>
 
-        <!-- API Endpoints Info -->
-        <div class="card" style="margin-top: 2rem;">
-            <h2 class="section-title">API Endpoints</h2>
-            <div style="font-family: monospace; background: #2b2b2b; padding: 1rem; border-radius: 4px; color: #333;">
-                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Base URL:</strong> http://{{ request.host.split(':')[0] }}:{{ vllm_config.port }}</p>
-                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Models:</strong> GET /v1/models</p>
-                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Completions:</strong> POST /v1/completions</p>
-                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Chat:</strong> POST /v1/chat/completions</p>
+        <!-- Bottom Grid for API and Raw Editor -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+            
+            <!-- API Endpoints Info -->
+            <div class="card" style="border: 1px solid #667eea;">
+                <h2 class="section-title">🔌 API Endpoints</h2>
+            <div style="font-family: 'Courier New', monospace; background: #1a1a1a; padding: 1.5rem; border-radius: 8px; border: 1px solid #333;">
+                <p style="margin: 0.75rem 0; color: #4ade80; font-size: 0.9rem;">
+                    <span style="color: #888;">BASE URL:</span> 
+                    <span style="color: #60a5fa;">http://{{ request.host.split(':')[0] }}:{{ vllm_config.port }}</span>
+                </p>
+                <hr style="border: none; border-top: 1px solid #333; margin: 1rem 0;">
+                <p style="margin: 0.5rem 0; color: #fff; font-size: 0.85rem;">
+                    <span style="color: #fbbf24;">GET</span> 
+                    <span style="color: #a5b4fc;">/v1/models</span>
+                    <span style="color: #888;">— List models</span>
+                </p>
+                <p style="margin: 0.5rem 0; color: #fff; font-size: 0.85rem;">
+                    <span style="color: #4ade80;">POST</span> 
+                    <span style="color: #a5b4fc;">/v1/completions</span>
+                    <span style="color: #888;">— Completions</span>
+                </p>
+                <p style="margin: 0.5rem 0; color: #fff; font-size: 0.85rem;">
+                    <span style="color: #4ade80;">POST</span> 
+                    <span style="color: #a5b4fc;">/v1/chat/completions</span>
+                    <span style="color: #888;">— Chat</span>
+                </p>
+                <hr style="border: none; border-top: 1px solid #333; margin: 1rem 0;">
+                <p style="margin: 0.5rem 0; color: #888; font-size: 0.75rem;">EXAMPLE CURL COMMAND:</p>
+                <div style="background: #0d0d0d; padding: 1rem; border-radius: 6px; margin-top: 0.5rem; overflow-x: auto;">
+                    <pre style="margin: 0; color: #a5b4fc; font-size: 0.75rem; line-height: 1.4;">curl -X POST http://{{ request.host.split(':')[0] }}:{{ vllm_config.port }}/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "{{ vllm_config.model }}",
+    "messages": [
+      {"role": "user", "content": "Hello, how are you?"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 512
+  }'</pre>
+                </div>
             </div>
         </div>
-    </div>
+            
+        </div> <!-- End bottom grid -->
+        
+    </div> <!-- End container -->
 
     <script>
         // Set API base URL for fetch requests (empty for same origin)

@@ -5,18 +5,18 @@
 }
 
 :root {
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary-color: #667eea;
+    --primary-hover: #5a67d8;
     --secondary-color: #64748b;
     --success-color: #10b981;
     --error-color: #ef4444;
-    --background: #323232;
-    --card-background: #444444;
+    --background: #1a1a1a;
+    --card-background: #2d2d2d;
     --text-primary: #ffffff;
-    --text-secondary: #bcbcbc;
-    --border-color: #e2e8f0;
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --text-secondary: #a0a0a0;
+    --border-color: #404040;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 body {
@@ -85,11 +85,12 @@ body {
 /* Card Sections */
 .card {
     background-color: var(--card-background);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
+    border-radius: 12px;
+    padding: 2rem;
     margin-bottom: 1.5rem;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .section-title {
@@ -372,7 +373,41 @@ select.input-field {
     min-width: 160px;
 }
 
+/* Grid Layout Helpers */
+.grid-2-col {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 1.5rem;
+}
+
+.grid-chat-control {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
 /* Responsive Design */
+@media (max-width: 1400px) {
+    /* 3 columns to 2 columns for top grid */
+    .container > div:first-child {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    /* 4 columns to 2 columns for second grid */
+    .container > div:nth-child(2) {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 968px) {
+    .grid-chat-control {
+        grid-template-columns: 1fr;
+    }
+    /* All grids to single column */
+    .container > div {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;
