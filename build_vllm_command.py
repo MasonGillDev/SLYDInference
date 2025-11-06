@@ -7,9 +7,19 @@ import argparse
 
 def build_command(config_file):
     """Build vLLM command from config file"""
+    import os
+    
     # Load config file
     with open(config_file) as f:
         config = json.load(f)
+    
+    # Handle HuggingFace token specially
+    if config.get('hf_token') is None:
+        # Try to load from file
+        token_file = os.path.expanduser('~/.huggingface_token')
+        if os.path.exists(token_file):
+            with open(token_file, 'r') as tf:
+                config['hf_token'] = tf.read().strip()
     
     # Start building command
     cmd_parts = ['python -m vllm.entrypoints.openai.api_server']

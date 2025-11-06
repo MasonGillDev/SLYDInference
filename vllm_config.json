@@ -24,5 +24,6 @@
   "max_loras": 1,
   "max_lora_rank": 16,
   "lora_dtype": "auto",
-  "max_cpu_loras": null
+  "max_cpu_loras": null,
+  "hf_token": null
 }
