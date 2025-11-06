@@ -294,6 +294,84 @@ function toggleLoraOptions() {
     }
 }
 
+// Send chat message to vLLM
+async function sendChatMessage() {
+    const prompt = document.getElementById('chat-prompt').value.trim();
+    
+    if (!prompt) {
+        alert('Please enter a prompt');
+        return;
+    }
+    
+    // Hide previous results and errors
+    document.getElementById('chat-response').style.display = 'none';
+    document.getElementById('chat-metrics').style.display = 'none';
+    document.getElementById('chat-error').style.display = 'none';
+    
+    // Show loading
+    document.getElementById('chat-loading').style.display = 'flex';
+    
+    try {
+        const response = await fetch(`${window.API_BASE}/chat-completion`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                prompt: prompt,
+                max_tokens: 512,
+                temperature: 0.7
+            })
+        });
+        
+        const data = await response.json();
+        
+        // Hide loading
+        document.getElementById('chat-loading').style.display = 'none';
+        
+        if (data.success) {
+            // Show response
+            document.getElementById('chat-response-text').textContent = data.response;
+            document.getElementById('chat-response').style.display = 'block';
+            
+            // Show metrics
+            const metrics = data.metrics;
+            document.getElementById('metric-latency').textContent = `${metrics.latency_ms} ms`;
+            document.getElementById('metric-throughput').textContent = `${metrics.throughput_tps} tokens/sec`;
+            document.getElementById('metric-prompt-tokens').textContent = metrics.prompt_tokens;
+            document.getElementById('metric-completion-tokens').textContent = metrics.completion_tokens;
+            document.getElementById('metric-total-tokens').textContent = metrics.total_tokens;
+            document.getElementById('metric-time').textContent = `${metrics.time_seconds} seconds`;
+            document.getElementById('chat-metrics').style.display = 'block';
+        } else {
+            // Show error
+            const errorDiv = document.getElementById('chat-error');
+            errorDiv.textContent = `Error: ${data.message}`;
+            if (data.details) {
+                errorDiv.textContent += ` - ${data.details}`;
+            }
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        // Hide loading
+        document.getElementById('chat-loading').style.display = 'none';
+        
+        // Show error
+        const errorDiv = document.getElementById('chat-error');
+        errorDiv.textContent = `Error: ${error.message}`;
+        errorDiv.style.display = 'block';
+    }
+}
+
+// Clear chat interface
+function clearChat() {
+    document.getElementById('chat-prompt').value = '';
+    document.getElementById('chat-response').style.display = 'none';
+    document.getElementById('chat-metrics').style.display = 'none';
+    document.getElementById('chat-error').style.display = 'none';
+    document.getElementById('chat-loading').style.display = 'none';
+}
+
 // Check service status on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Check service status automatically on load

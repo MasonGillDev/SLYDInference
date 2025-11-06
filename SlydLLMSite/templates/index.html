@@ -368,6 +368,69 @@
             </div>
         </div>
 
+        <!-- Chat Test Interface -->
+        <div class="card">
+            <h2 class="section-title">Test Chat Interface</h2>
+            <div class="chat-container">
+                <div class="chat-input-group">
+                    <textarea id="chat-prompt" 
+                              class="chat-textarea" 
+                              placeholder="Enter your prompt here..."
+                              rows="4"></textarea>
+                    <div class="chat-controls">
+                        <button type="button" class="btn-primary" onclick="sendChatMessage()">
+                            Send Message
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="clearChat()">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="chat-response" class="chat-response" style="display: none;">
+                    <h3 style="margin-bottom: 0.5rem;">Response:</h3>
+                    <div id="chat-response-text" class="response-text"></div>
+                </div>
+                
+                <div id="chat-metrics" class="chat-metrics" style="display: none;">
+                    <h3 style="margin-bottom: 0.5rem;">Performance Metrics:</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Latency:</span>
+                            <span id="metric-latency" class="metric-value">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Throughput:</span>
+                            <span id="metric-throughput" class="metric-value">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Prompt Tokens:</span>
+                            <span id="metric-prompt-tokens" class="metric-value">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Completion Tokens:</span>
+                            <span id="metric-completion-tokens" class="metric-value">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Total Tokens:</span>
+                            <span id="metric-total-tokens" class="metric-value">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Time:</span>
+                            <span id="metric-time" class="metric-value">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="chat-loading" class="chat-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span>Processing your request...</span>
+                </div>
+                
+                <div id="chat-error" class="status-message error" style="display: none;"></div>
+            </div>
+        </div>
+
         <!-- Service Status Card -->
         <div class="card">
             <h2 class="section-title">Service Status</h2>

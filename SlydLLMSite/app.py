@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import requests
+import time
 
 # Simple Flask app without any proxy configuration
 app = Flask(__name__)
@@ -203,6 +204,82 @@ def save_raw_config():
         config = data.get('config', {})
         save_vllm_config(config)
         return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/chat-completion', methods=['POST'])
+def chat_completion():
+    """Send chat completion request to vLLM and return response with metrics"""
+    try:
+        data = request.json
+        user_prompt = data.get('prompt', '')
+        
+        if not user_prompt:
+            return jsonify({'success': False, 'message': 'No prompt provided'})
+        
+        # Get vLLM config to know the port
+        config = load_vllm_config()
+        vllm_url = f"http://localhost:{config.get('port', 5002)}/v1/chat/completions"
+        
+        # Prepare the chat request
+        chat_request = {
+            "model": config.get('model', 'HuggingFaceTB/SmolLM3-3B'),
+            "messages": [
+                {"role": "user", "content": user_prompt}
+            ],
+            "temperature": data.get('temperature', 0.7),
+            "max_tokens": data.get('max_tokens', 512),
+            "stream": False
+        }
+        
+        # Track timing
+        start_time = time.time()
+        
+        # Make request to vLLM
+        response = requests.post(vllm_url, json=chat_request, timeout=60)
+        
+        # Calculate latency
+        latency = (time.time() - start_time) * 1000  # Convert to milliseconds
+        
+        if response.status_code != 200:
+            return jsonify({
+                'success': False, 
+                'message': f'vLLM error: {response.status_code}',
+                'details': response.text
+            })
+        
+        result = response.json()
+        
+        # Extract response and metrics
+        response_text = result['choices'][0]['message']['content']
+        usage = result.get('usage', {})
+        
+        # Calculate tokens per second
+        total_tokens = usage.get('total_tokens', 0)
+        completion_tokens = usage.get('completion_tokens', 0)
+        prompt_tokens = usage.get('prompt_tokens', 0)
+        
+        # Calculate throughput (tokens per second)
+        time_taken_seconds = latency / 1000
+        throughput = completion_tokens / time_taken_seconds if time_taken_seconds > 0 else 0
+        
+        return jsonify({
+            'success': True,
+            'response': response_text,
+            'metrics': {
+                'latency_ms': round(latency, 2),
+                'throughput_tps': round(throughput, 2),
+                'prompt_tokens': prompt_tokens,
+                'completion_tokens': completion_tokens,
+                'total_tokens': total_tokens,
+                'time_seconds': round(time_taken_seconds, 2)
+            }
+        })
+        
+    except requests.exceptions.Timeout:
+        return jsonify({'success': False, 'message': 'Request timed out'})
+    except requests.exceptions.ConnectionError:
+        return jsonify({'success': False, 'message': 'Cannot connect to vLLM server. Is it running?'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
