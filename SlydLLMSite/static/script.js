@@ -109,11 +109,11 @@ async function checkServiceStatus() {
         if (data.active) {
             showStatus(statusDiv, '✓ Service is running', 'success');
             
-            // Also check if the API is responding
+            // Also check if the API is responding through the proxy
             try {
-                const apiResponse = await fetch(`http://${window.location.hostname}:${document.getElementById('port').value}/v1/models`);
+                const apiResponse = await fetch(`${window.API_BASE}/v1/models`);
                 if (apiResponse.ok) {
-                    statusDiv.innerHTML += '<br>✓ API is responding on port ' + document.getElementById('port').value;
+                    statusDiv.innerHTML += '<br>✓ API is responding';
                 }
             } catch (e) {
                 statusDiv.innerHTML += '<br>⚠ API not responding (service may be starting)';
