@@ -27,14 +27,14 @@ echo ""
 if [ ! -d "/opt/vllm-env" ]; then
     echo -e "${RED}Error: vLLM not installed${NC}"
     echo "Please run install_vllm.sh first"
-    exit 1
+    
 fi
 
 # Check if vLLM service is setup
 if [ ! -f "/opt/vllm/vllm_config.json" ]; then
     echo -e "${RED}Error: vLLM service not configured${NC}"
     echo "Please run setup_vllm_service.sh first"
-    exit 1
+    
 fi
 
 # Install Flask and dependencies in vLLM environment

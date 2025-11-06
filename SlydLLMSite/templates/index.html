@@ -10,11 +10,12 @@
     <!-- Top Navigation Bar -->
     <nav class="topbar">
         <div class="nav-content">
-            <div class="logo-section">
+            <div class="logo-section" style="display: flex; align-items: center;">
+                <img src="https://www.slyd.com/images/SLYD-logo-300x86.webp" alt="SLYD Logo" style="height: 40px; margin-right: 20px;">
                 <h1 style="color: white; margin: 0;">vLLM Configuration</h1>
             </div>
             <div class="nav-links">
-                <a href="http://localhost:5002/docs" target="_blank" class="docs-link">API Docs</a>
+                <a href="https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html" target="_blank" class="docs-link">API Docs</a>
             </div>
         </div>
     </nav>
@@ -145,6 +146,249 @@
             </div>
         </div>
 
+        <!-- Advanced Options Section (Collapsible) -->
+        <div class="card">
+            <h2 class="section-title" style="cursor: pointer; user-select: none;" onclick="toggleAdvancedOptions()">
+                <span id="advanced-arrow" style="display: inline-block; transition: transform 0.3s;">▶</span>
+                Advanced Options
+            </h2>
+            
+            <div id="advanced-options" style="display: none;">
+                <!-- Quantization and Optimization -->
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Optimization Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quantization">Quantization</label>
+                        <select id="quantization" class="input-field">
+                            <option value="null" {% if not vllm_config.quantization %}selected{% endif %}>None</option>
+                            <option value="awq" {% if vllm_config.quantization == 'awq' %}selected{% endif %}>AWQ</option>
+                            <option value="gptq" {% if vllm_config.quantization == 'gptq' %}selected{% endif %}>GPTQ</option>
+                            <option value="squeezellm" {% if vllm_config.quantization == 'squeezellm' %}selected{% endif %}>SqueezeLLM</option>
+                            <option value="fp8" {% if vllm_config.quantization == 'fp8' %}selected{% endif %}>FP8</option>
+                        </select>
+                        <small class="helper-text">Model quantization method</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seed">Random Seed</label>
+                        <input type="number"
+                               id="seed"
+                               value="{{ vllm_config.seed }}"
+                               min="0"
+                               class="input-field">
+                        <small class="helper-text">0 for random (default: 0)</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="swap-space">Swap Space (GB)</label>
+                        <input type="number"
+                               id="swap-space"
+                               value="{{ vllm_config.swap_space }}"
+                               min="0"
+                               max="64"
+                               class="input-field">
+                        <small class="helper-text">CPU swap space per GPU (default: 4)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="block-size">Block Size</label>
+                        <input type="number"
+                               id="block-size"
+                               value="{{ vllm_config.block_size }}"
+                               min="8"
+                               max="32"
+                               step="8"
+                               class="input-field">
+                        <small class="helper-text">Token block size (8, 16, or 32)</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox"
+                                   id="enable-prefix-caching"
+                                   {% if vllm_config.enable_prefix_caching %}checked{% endif %}>
+                            <span>Enable Prefix Caching</span>
+                        </label>
+                        <small class="helper-text">Cache prompt prefixes for faster inference</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox"
+                                   id="enable-chunked-prefill"
+                                   {% if vllm_config.enable_chunked_prefill %}checked{% endif %}>
+                            <span>Enable Chunked Prefill</span>
+                        </label>
+                        <small class="helper-text">Split prefill into smaller chunks</small>
+                    </div>
+                </div>
+
+                <!-- Batching and Scheduling -->
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Batching & Scheduling</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="max-num-batched-tokens">Max Batched Tokens</label>
+                        <input type="number"
+                               id="max-num-batched-tokens"
+                               value="{{ vllm_config.max_num_batched_tokens or '' }}"
+                               placeholder="Auto"
+                               min="1"
+                               class="input-field">
+                        <small class="helper-text">Max tokens per batch (empty for auto)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max-paddings">Max Paddings</label>
+                        <input type="number"
+                               id="max-paddings"
+                               value="{{ vllm_config.max_paddings }}"
+                               min="1"
+                               class="input-field">
+                        <small class="helper-text">Max padding tokens (default: 256)</small>
+                    </div>
+                </div>
+
+                <!-- Tokenizer Settings -->
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Tokenizer Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tokenizer">Custom Tokenizer</label>
+                        <input type="text"
+                               id="tokenizer"
+                               value="{{ vllm_config.tokenizer or '' }}"
+                               placeholder="Use model's tokenizer"
+                               class="input-field">
+                        <small class="helper-text">Override model tokenizer</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tokenizer-pool-size">Tokenizer Pool Size</label>
+                        <input type="number"
+                               id="tokenizer-pool-size"
+                               value="{{ vllm_config.tokenizer_pool_size }}"
+                               min="0"
+                               max="64"
+                               class="input-field">
+                        <small class="helper-text">Parallel tokenizers (0 = disabled)</small>
+                    </div>
+                </div>
+
+                <!-- API Settings -->
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">API Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="chat-template">Chat Template</label>
+                        <input type="text"
+                               id="chat-template"
+                               value="{{ vllm_config.chat_template or '' }}"
+                               placeholder="Auto-detect from model"
+                               class="input-field">
+                        <small class="helper-text">Override chat template</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="response-role">Response Role</label>
+                        <input type="text"
+                               id="response-role"
+                               value="{{ vllm_config.response_role }}"
+                               class="input-field">
+                        <small class="helper-text">Role name in chat responses</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="served-model-name">Served Model Name</label>
+                        <input type="text"
+                               id="served-model-name"
+                               value="{{ vllm_config.served_model_name or '' }}"
+                               placeholder="Use actual model name"
+                               class="input-field">
+                        <small class="helper-text">Override model name in API</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox"
+                                   id="disable-log-stats"
+                                   {% if vllm_config.disable_log_stats %}checked{% endif %}>
+                            <span>Disable Log Stats</span>
+                        </label>
+                        <small class="helper-text">Disable performance logging</small>
+                    </div>
+                </div>
+
+                <!-- LoRA Settings -->
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">LoRA Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox"
+                                   id="enable-lora"
+                                   {% if vllm_config.enable_lora %}checked{% endif %}
+                                   onchange="toggleLoraOptions()">
+                            <span>Enable LoRA</span>
+                        </label>
+                        <small class="helper-text">Enable LoRA adapter support</small>
+                    </div>
+                </div>
+
+                <div id="lora-options" style="{% if not vllm_config.enable_lora %}display: none;{% endif %}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="max-loras">Max LoRAs</label>
+                            <input type="number"
+                                   id="max-loras"
+                                   value="{{ vllm_config.max_loras }}"
+                                   min="1"
+                                   max="64"
+                                   class="input-field">
+                            <small class="helper-text">Max concurrent LoRA adapters</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="max-lora-rank">Max LoRA Rank</label>
+                            <input type="number"
+                                   id="max-lora-rank"
+                                   value="{{ vllm_config.max_lora_rank }}"
+                                   min="1"
+                                   max="128"
+                                   class="input-field">
+                            <small class="helper-text">Maximum LoRA rank</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="lora-dtype">LoRA Data Type</label>
+                            <select id="lora-dtype" class="input-field">
+                                <option value="auto" {% if vllm_config.lora_dtype == 'auto' %}selected{% endif %}>auto</option>
+                                <option value="float16" {% if vllm_config.lora_dtype == 'float16' %}selected{% endif %}>float16</option>
+                                <option value="bfloat16" {% if vllm_config.lora_dtype == 'bfloat16' %}selected{% endif %}>bfloat16</option>
+                                <option value="float32" {% if vllm_config.lora_dtype == 'float32' %}selected{% endif %}>float32</option>
+                            </select>
+                            <small class="helper-text">LoRA weights precision</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="max-cpu-loras">Max CPU LoRAs</label>
+                            <input type="number"
+                                   id="max-cpu-loras"
+                                   value="{{ vllm_config.max_cpu_loras or '' }}"
+                                   placeholder="Auto"
+                                   min="0"
+                                   class="input-field">
+                            <small class="helper-text">LoRAs cached in CPU memory</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Service Status Card -->
         <div class="card">
             <h2 class="section-title">Service Status</h2>
@@ -187,18 +431,18 @@
         <!-- API Endpoints Info -->
         <div class="card" style="margin-top: 2rem;">
             <h2 class="section-title">API Endpoints</h2>
-            <div style="font-family: monospace; background: #f5f5f5; padding: 1rem; border-radius: 4px;">
-                <p style="margin: 0.5rem 0;"><strong>Base URL:</strong> http://{{ request.host.split(':')[0] }}:{{ vllm_config.port }}</p>
-                <p style="margin: 0.5rem 0;"><strong>Models:</strong> GET /v1/models</p>
-                <p style="margin: 0.5rem 0;"><strong>Completions:</strong> POST /v1/completions</p>
-                <p style="margin: 0.5rem 0;"><strong>Chat:</strong> POST /v1/chat/completions</p>
+            <div style="font-family: monospace; background: #2b2b2b; padding: 1rem; border-radius: 4px; color: #333;">
+                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Base URL:</strong> http://{{ request.host.split(':')[0] }}:{{ vllm_config.port }}</p>
+                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Models:</strong> GET /v1/models</p>
+                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Completions:</strong> POST /v1/completions</p>
+                <p style="margin: 0.5rem 0; color: #ffffff;"><strong>Chat:</strong> POST /v1/chat/completions</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Set API base URL for fetch requests
-        window.API_BASE = "{{ request.script_root }}";
+        // Set API base URL for fetch requests (empty for same origin)
+        window.API_BASE = "";
     </script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

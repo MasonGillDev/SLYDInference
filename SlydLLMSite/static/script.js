@@ -45,7 +45,38 @@ async function saveConfig() {
         max_model_len: parseInt(document.getElementById('max-model-len').value),
         tensor_parallel_size: parseInt(document.getElementById('tensor-parallel').value),
         dtype: document.getElementById('dtype').value,
-        trust_remote_code: document.getElementById('trust-remote-code').checked
+        trust_remote_code: document.getElementById('trust-remote-code').checked,
+        
+        // Advanced Options
+        quantization: document.getElementById('quantization').value === 'null' ? null : document.getElementById('quantization').value,
+        seed: parseInt(document.getElementById('seed').value),
+        swap_space: parseInt(document.getElementById('swap-space').value),
+        block_size: parseInt(document.getElementById('block-size').value),
+        enable_prefix_caching: document.getElementById('enable-prefix-caching').checked,
+        enable_chunked_prefill: document.getElementById('enable-chunked-prefill').checked,
+        
+        // Batching & Scheduling
+        max_num_batched_tokens: document.getElementById('max-num-batched-tokens').value ? 
+            parseInt(document.getElementById('max-num-batched-tokens').value) : null,
+        max_paddings: parseInt(document.getElementById('max-paddings').value),
+        
+        // Tokenizer Settings
+        tokenizer: document.getElementById('tokenizer').value || null,
+        tokenizer_pool_size: parseInt(document.getElementById('tokenizer-pool-size').value),
+        
+        // API Settings
+        chat_template: document.getElementById('chat-template').value || null,
+        response_role: document.getElementById('response-role').value,
+        served_model_name: document.getElementById('served-model-name').value || null,
+        disable_log_stats: document.getElementById('disable-log-stats').checked,
+        
+        // LoRA Settings
+        enable_lora: document.getElementById('enable-lora').checked,
+        max_loras: parseInt(document.getElementById('max-loras').value),
+        max_lora_rank: parseInt(document.getElementById('max-lora-rank').value),
+        lora_dtype: document.getElementById('lora-dtype').value,
+        max_cpu_loras: document.getElementById('max-cpu-loras').value ? 
+            parseInt(document.getElementById('max-cpu-loras').value) : null
     };
 
     try {
@@ -236,6 +267,32 @@ function showStatus(element, message, type) {
         setTimeout(() => {
             element.style.display = 'none';
         }, 5000);
+    }
+}
+
+// Toggle advanced options visibility
+function toggleAdvancedOptions() {
+    const advancedDiv = document.getElementById('advanced-options');
+    const arrow = document.getElementById('advanced-arrow');
+    
+    if (advancedDiv.style.display === 'none') {
+        advancedDiv.style.display = 'block';
+        arrow.style.transform = 'rotate(90deg)';
+    } else {
+        advancedDiv.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Toggle LoRA options visibility
+function toggleLoraOptions() {
+    const loraOptionsDiv = document.getElementById('lora-options');
+    const enableLora = document.getElementById('enable-lora').checked;
+    
+    if (enableLora) {
+        loraOptionsDiv.style.display = 'block';
+    } else {
+        loraOptionsDiv.style.display = 'none';
     }
 }
 

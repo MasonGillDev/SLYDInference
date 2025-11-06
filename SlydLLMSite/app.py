@@ -1,33 +1,11 @@
-from flask import Flask, render_template, request, jsonify, Blueprint
+from flask import Flask, render_template, request, jsonify
 import json
 import os
 import subprocess
 import requests
 
-# Check if running behind proxy with a prefix
-PREFIX = os.environ.get('URL_PREFIX', '')
-
-if PREFIX:
-    # Create a blueprint with the prefix
-    bp = Blueprint('main', __name__, static_folder='static', static_url_path=f'{PREFIX}/static')
-    app = Flask(__name__)
-
-    # We'll move routes to the blueprint later, but for now use a simple approach
-    class PrefixMiddleware:
-        def __init__(self, app, prefix=''):
-            self.app = app
-            self.prefix = prefix
-
-        def __call__(self, environ, start_response):
-            if environ['PATH_INFO'].startswith(self.prefix):
-                environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
-                environ['SCRIPT_NAME'] = self.prefix
-            return self.app(environ, start_response)
-
-    app = Flask(__name__)
-    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=PREFIX)
-else:
-    app = Flask(__name__)
+# Simple Flask app without any proxy configuration
+app = Flask(__name__)
 
 # Config file paths
 APP_CONFIG_PATH = 'app_config.json'
