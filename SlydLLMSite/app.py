@@ -20,6 +20,8 @@ VLLM_CONFIG_PATH = '/opt/vllm/vllm_config.json'
 if not os.path.exists('/opt/vllm'):
     VLLM_CONFIG_PATH = 'vllm_config.json'
 VLLM_CONFIG_DEFAULTS_PATH = 'vllm_config_defaults.json'
+# HuggingFace token file (separate from config for security)
+HF_TOKEN_PATH = os.path.expanduser('~/.huggingface_token')
 
 # Default vLLM configuration (factory settings)
 DEFAULT_VLLM_CONFIG = {
@@ -66,14 +68,42 @@ def mask_token(token):
         return token[:2] + '...'
     return token[:8] + '...'
 
+def load_hf_token():
+    """Load HuggingFace token from file"""
+    if os.path.exists(HF_TOKEN_PATH):
+        try:
+            with open(HF_TOKEN_PATH, 'r') as f:
+                return f.read().strip()
+        except:
+            pass
+    return ''
+
+def save_hf_token(token):
+    """Save HuggingFace token to file"""
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(HF_TOKEN_PATH), exist_ok=True)
+        with open(HF_TOKEN_PATH, 'w') as f:
+            f.write(token)
+        # Set restrictive permissions (owner read/write only)
+        os.chmod(HF_TOKEN_PATH, 0o600)
+        # Also set as environment variable for current session
+        os.environ['HUGGINGFACE_TOKEN'] = token
+        os.environ['HF_TOKEN'] = token
+        return True
+    except Exception as e:
+        print(f"Error saving HF token: {e}")
+        return False
+
 @app.route('/')
 def index():
     """Main configuration page"""
     app_config = load_app_config()
     vllm_config = load_vllm_config()
 
-    # Mask the HF token for display
-    masked_token = mask_token(app_config.get('huggingface_token', ''))
+    # Load and mask the HF token for display
+    hf_token = load_hf_token()
+    masked_token = mask_token(hf_token)
 
     return render_template('index.html',
                          app_config=app_config,
@@ -103,20 +133,27 @@ def check_model():
     except requests.exceptions.RequestException as e:
         return jsonify({'valid': False, 'message': f'Error: {str(e)}'})
 
-@app.route('/save-token', methods=['POST'])
-def save_token():
+@app.route('/save-hf-token', methods=['POST'])
+def save_hf_token_endpoint():
     """Save HuggingFace token"""
     data = request.json
     token = data.get('token', '')
 
     if not token:
         return jsonify({'success': False, 'message': 'No token provided'})
+    
+    # Don't save if it's the masked version
+    if '...' in token and len(token) < 20:
+        return jsonify({'success': False, 'message': 'Invalid token format'})
 
     try:
-        app_config = load_app_config()
-        app_config['huggingface_token'] = token
-        save_app_config(app_config)
-        return jsonify({'success': True})
+        if save_hf_token(token):
+            return jsonify({
+                'success': True, 
+                'masked_token': mask_token(token)
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Failed to save token'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
@@ -232,7 +269,7 @@ def chat_completion():
                 {"role": "user", "content": user_prompt}
             ],
             "temperature": data.get('temperature', 0.7),
-            "max_tokens": data.get('max_tokens', 512),
+            "max_tokens": data.get('max_tokens', 1000),
             "stream": False
         }
         

@@ -120,7 +120,9 @@ class ModelBenchmark:
         }
         
         try:
-            async with session.post(self.chat_endpoint, json=payload) as response:
+            # Add timeout to prevent hanging requests
+            timeout = aiohttp.ClientTimeout(total=30)
+            async with session.post(self.chat_endpoint, json=payload, timeout=timeout) as response:
                 first_byte_time = time.time() - start_time
                 result = await response.json()
                 total_time = time.time() - start_time
@@ -412,7 +414,8 @@ async def run_benchmark_suite(base_url: str, model_name: str, tests: List[str]) 
             elif test_name == "throughput":
                 results["tests"][test_name] = await benchmark.throughput_test(duration_seconds=20)
             elif test_name == "stress":
-                results["tests"][test_name] = await benchmark.stress_test(max_concurrent=100)
+                # Start with 50 for stress test - can be increased based on hardware
+                results["tests"][test_name] = await benchmark.stress_test(max_concurrent=50)
         except Exception as e:
             results["tests"][test_name] = {"error": str(e)}
     

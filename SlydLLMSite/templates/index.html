@@ -33,7 +33,23 @@
                     <p style="font-size: 1.1rem; color: var(--primary-color); margin: 0.5rem 0; font-weight: 500;">
                         {{ vllm_config.model }}
                     </p>
-                    <small class="helper-text" style="display: block; margin-top: 1rem;">To change the model, edit vllm_config.json directly</small>
+                    <small class="helper-text" style="display: block; margin-top: 0.5rem;">To change the model, edit vllm_config.json directly</small>
+                    
+                    <!-- HuggingFace Token Section -->
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                        <label for="hf-token" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">HuggingFace Token</label>
+                        <div class="input-with-button">
+                            <input type="password" 
+                                   id="hf-token" 
+                                   placeholder="hf_..." 
+                                   value="{{ masked_token }}"
+                                   class="input-field flex-1"
+                                   style="font-family: monospace;">
+                            <button type="button" class="btn-primary" onclick="saveHFToken()">Save Token</button>
+                        </div>
+                        <small class="helper-text">Required for gated models. Token is stored securely.</small>
+                        <div id="token-status" class="status-message" style="margin-top: 0.5rem; display: none;"></div>
+                    </div>
                 </div>
             </div>
 

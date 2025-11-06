@@ -33,6 +33,13 @@ fi
 # Activate virtual environment
 source /opt/vllm-env/bin/activate
 
+# Load HuggingFace token if it exists
+if [ -f "$HOME/.huggingface_token" ]; then
+    export HUGGINGFACE_TOKEN=$(cat $HOME/.huggingface_token)
+    export HF_TOKEN=$HUGGINGFACE_TOKEN
+    echo -e "${GREEN}HuggingFace token loaded${NC}"
+fi
+
 # Parse configuration
 echo -e "${BLUE}Loading configuration from $CONFIG_FILE...${NC}"
 

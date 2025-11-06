@@ -1,4 +1,43 @@
-// Check model function is no longer needed since model is read-only
+// Save HuggingFace token
+async function saveHFToken() {
+    const token = document.getElementById('hf-token').value.trim();
+    const statusDiv = document.getElementById('token-status');
+    
+    if (!token) {
+        showStatus(statusDiv, '✗ Please enter a token', 'error');
+        return;
+    }
+    
+    // Don't send if it's the masked version
+    if (token.includes('...') && token.length < 20) {
+        showStatus(statusDiv, '✗ Please enter a new token', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${window.API_BASE}/save-hf-token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: token })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showStatus(statusDiv, '✓ Token saved successfully', 'success');
+            // Update the field to show masked version
+            if (data.masked_token) {
+                document.getElementById('hf-token').value = data.masked_token;
+            }
+        } else {
+            showStatus(statusDiv, '✗ Error: ' + (data.message || 'Failed to save token'), 'error');
+        }
+    } catch (error) {
+        showStatus(statusDiv, '✗ Error: ' + error.message, 'error');
+    }
+}
 
 // Save vLLM configuration
 async function saveConfig() {
