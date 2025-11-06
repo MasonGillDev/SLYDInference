@@ -8,7 +8,7 @@ User=root
 Group=root
 WorkingDirectory=/root/SLYDInference
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=/usr/bin/python3 /root/SLYDInference/launch_vllm_server.py --config /root/SLYDInference/vllm_config_port5002.json
+ExecStart=/usr/bin/python3 /root/SLYDInference/launch_vllm_server.py --config /root/SLYDInference/vllm_config.json
 Restart=always
 RestartSec=10
 StandardOutput=journal
