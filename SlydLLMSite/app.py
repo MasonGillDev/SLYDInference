@@ -16,22 +16,10 @@ app = Flask(__name__)
 APP_CONFIG_PATH = 'app_config.json'
 # Use the systemd service's config location
 VLLM_CONFIG_PATH = '/opt/vllm/vllm_config.json'
+DEFAULT_CONFIG_PATH = '/opt/vllm/default_vllm_config.json'
 
 # HuggingFace token file (separate from config for security)
 HF_TOKEN_PATH = os.path.expanduser('~/.huggingface_token')
-
-# Default vLLM configuration (factory settings)
-DEFAULT_VLLM_CONFIG = {
-    'model': 'HuggingFaceTB/SmolLM3-3B',
-    'host': '0.0.0.0',
-    'port': 5002,
-    'max_num_seqs': 32,
-    'gpu_memory_utilization': 0.7,
-    'max_model_len': 8192,
-    'tensor_parallel_size': 1,
-    'dtype': 'auto',
-    'trust_remote_code': False
-}
 
 def load_app_config():
     """Load application configuration"""
@@ -45,7 +33,16 @@ def load_vllm_config():
     if os.path.exists(VLLM_CONFIG_PATH):
         with open(VLLM_CONFIG_PATH, 'r') as f:
             return json.load(f)
-    return DEFAULT_VLLM_CONFIG.copy()
+    # Fall back to default config file
+    if os.path.exists(DEFAULT_CONFIG_PATH):
+        with open(DEFAULT_CONFIG_PATH, 'r') as f:
+            return json.load(f)
+    # If neither exists, return minimal config
+    return {
+        'model': 'HuggingFaceTB/SmolLM3-3B',
+        'host': '0.0.0.0',
+        'port': 5002
+    }
 
 def save_app_config(config):
     """Save application configuration"""
@@ -220,7 +217,14 @@ def service_status():
 def reset_config():
     """Reset vLLM configuration to factory defaults"""
     try:
-        save_vllm_config(DEFAULT_VLLM_CONFIG.copy())
+        # Read the default configuration from file
+        if not os.path.exists(DEFAULT_CONFIG_PATH):
+            return jsonify({'success': False, 'message': f'Default config file not found at {DEFAULT_CONFIG_PATH}'})
+        
+        with open(DEFAULT_CONFIG_PATH, 'r') as f:
+            default_config = json.load(f)
+        
+        save_vllm_config(default_config)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
