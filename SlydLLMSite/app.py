@@ -16,10 +16,7 @@ app = Flask(__name__)
 APP_CONFIG_PATH = 'app_config.json'
 # Use the systemd service's config location
 VLLM_CONFIG_PATH = '/opt/vllm/vllm_config.json'
-# Fallback to local if /opt/vllm doesn't exist
-if not os.path.exists('/opt/vllm'):
-    VLLM_CONFIG_PATH = 'vllm_config.json'
-VLLM_CONFIG_DEFAULTS_PATH = 'vllm_config_defaults.json'
+
 # HuggingFace token file (separate from config for security)
 HF_TOKEN_PATH = os.path.expanduser('~/.huggingface_token')
 
