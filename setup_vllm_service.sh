@@ -57,6 +57,7 @@ INSTALL_DIR=$(pwd)
 echo -e "${YELLOW}Setting up vLLM directory...${NC}"
 mkdir -p /opt/vllm
 cp vllm_config.json /opt/vllm/
+cp default_vllm_config.json /opt/vllm
 cp run_vllm_server.sh /opt/vllm/
 cp build_vllm_command.py /opt/vllm/
 chmod +x /opt/vllm/run_vllm_server.sh
