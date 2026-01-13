@@ -51,7 +51,7 @@ echo -e "${GREEN}✓${NC} Python headers installed"
 
 # Step 4: Install Python venv (must come before pip on Ubuntu 24.04)
 echo -e "${YELLOW}[4/7]${NC} Installing Python virtual environment support..."
-apt install -y python3.12-venv >> "$LOG_FILE" 2>&1
+apt install -y python3-venv >> "$LOG_FILE" 2>&1
 echo -e "${GREEN}✓${NC} Python venv installed"
 
 # Step 5: Create virtual environment
