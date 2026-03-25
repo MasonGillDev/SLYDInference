@@ -11,19 +11,15 @@
   "quantization": null,
   "tokenizer": null,
   "seed": 0,
-  "swap_space": 4,
-  "block_size": 16,
   "enable_prefix_caching": false,
   "enable_chunked_prefill": false,
   "max_num_batched_tokens": null,
   "disable_log_stats": false,
   "chat_template": null,
-  "response_role": "assistant",
   "served_model_name": null,
   "enable_lora": false,
   "max_loras": 1,
   "max_lora_rank": 16,
   "lora_dtype": "auto",
-  "max_cpu_loras": null,
-  "hf_token": null
+  "max_cpu_loras": null
 }

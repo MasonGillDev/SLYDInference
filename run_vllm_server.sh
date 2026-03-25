@@ -53,10 +53,10 @@ if [ -n "${HF_TOKEN:-}" ]; then
 elif [ -n "${HUGGINGFACE_TOKEN:-}" ]; then
     export HF_TOKEN="$HUGGINGFACE_TOKEN"
     echo -e "${GREEN}HuggingFace token loaded from environment${NC}"
-elif [ -f "$HOME/.huggingface_token" ]; then
-    export HUGGINGFACE_TOKEN=$(cat "$HOME/.huggingface_token")
+elif [ -f "/home/ubuntu/.huggingface_token" ]; then
+    export HUGGINGFACE_TOKEN=$(cat "/home/ubuntu/.huggingface_token")
     export HF_TOKEN="$HUGGINGFACE_TOKEN"
-    echo -e "${GREEN}HuggingFace token loaded from $HOME/.huggingface_token${NC}"
+    echo -e "${GREEN}HuggingFace token loaded from /home/ubuntu/.huggingface_token${NC}"
 else
     echo -e "${YELLOW}No HuggingFace token found — gated models will not be accessible${NC}"
 fi

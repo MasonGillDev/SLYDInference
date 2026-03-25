@@ -21,11 +21,23 @@ def build_command(config_file):
             with open(token_file, 'r') as tf:
                 config['hf_token'] = tf.read().strip()
     
+    # Keys that are config-only and should not be passed as CLI arguments
+    # (removed/unsupported in newer vLLM versions, or internal to this project)
+    skip_keys = {
+        'hf_token',
+        'swap_space',
+        'block_size',
+        'response_role',
+    }
+
     # Start building command
     cmd_parts = ['python -m vllm.entrypoints.openai.api_server']
-    
+
     # Process each config parameter
     for key, value in config.items():
+        if key in skip_keys:
+            continue
+
         # Convert underscore to hyphen for CLI arguments
         cli_arg = '--' + key.replace('_', '-')
         

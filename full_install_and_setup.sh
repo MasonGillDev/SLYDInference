@@ -30,13 +30,14 @@ DEFAULT_MODEL="HuggingFaceTB/SmolLM3-3B"
 MODEL_NAME="${MODEL_NAME:-$DEFAULT_MODEL}"
 
 # Persist HF token to token file if provided via env var
+HF_TOKEN_DIR="/home/ubuntu"
 if [ -n "${HF_TOKEN:-${HUGGINGFACE_TOKEN:-}}" ]; then
     HF_TOKEN="${HF_TOKEN:-$HUGGINGFACE_TOKEN}"
     export HF_TOKEN
     export HUGGINGFACE_TOKEN="$HF_TOKEN"
-    echo "$HF_TOKEN" > "$HOME/.huggingface_token"
-    chmod 600 "$HOME/.huggingface_token"
-    echo -e "${GREEN}HuggingFace token persisted to $HOME/.huggingface_token${NC}"
+    echo "$HF_TOKEN" > "$HF_TOKEN_DIR/.huggingface_token"
+    chmod 600 "$HF_TOKEN_DIR/.huggingface_token"
+    echo -e "${GREEN}HuggingFace token persisted to $HF_TOKEN_DIR/.huggingface_token${NC}"
 else
     echo -e "${YELLOW}No HF_TOKEN set — skipping token setup (gated models will not be accessible)${NC}"
 fi
@@ -60,7 +61,11 @@ fi
 
 echo -e "${GREEN}Environment:${NC}"
 echo -e "  MODEL_NAME = ${MODEL_NAME}"
-echo -e "  HF_TOKEN   = ${HF_TOKEN:+set (hidden)}${HF_TOKEN:-not set}"
+if [ -n "${HF_TOKEN:-}" ]; then
+    echo -e "  HF_TOKEN   = set (hidden)"
+else
+    echo -e "  HF_TOKEN   = not set"
+fi
 echo ""
 
 # Step 1: Install vLLM
@@ -120,5 +125,8 @@ echo -e "\n${GREEN}API endpoints available at:${NC}"
 echo -e "  http://$(hostname -I | awk '{print $1}'):8080/v1/models"
 echo -e "  http://$(hostname -I | awk '{print $1}'):8080/v1/chat/completions"
 
-echo -e "\n${YELLOW}Note: Remember to set your HuggingFace token in the control panel for gated models.${NC}"
+echo -e "\n${YELLOW}Note: vLLM is downloading the model in the background. The management portal will"
+echo -e "show the server as DOWN until the download completes and the model is loaded into"
+echo -e "GPU memory. This can take several minutes depending on model size and network speed."
+echo -e "Monitor progress with: journalctl -u vllm -f${NC}"
 
