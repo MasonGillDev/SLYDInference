@@ -64,6 +64,7 @@ User=root
 Group=root
 WorkingDirectory=/opt/SlydLLMSite
 Environment="PATH=/opt/vllm-env/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=-/home/ubuntu/.env
 ExecStart=/opt/vllm-env/bin/python /opt/SlydLLMSite/app.py
 Restart=on-failure
 RestartSec=10

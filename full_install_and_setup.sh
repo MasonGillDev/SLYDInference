@@ -15,6 +15,54 @@ echo -e "${GREEN}=================================${NC}"
 echo -e "${GREEN}  SlydInference Full Setup${NC}"
 echo -e "${GREEN}=================================${NC}\n"
 
+# Source .env file if it exists (needed for cloud-init where each runcmd
+# runs in its own shell and env vars don't carry over between entries)
+ENV_FILE="${ENV_FILE:-/home/ubuntu/.env}"
+if [ -f "$ENV_FILE" ]; then
+    echo -e "${YELLOW}Sourcing environment from $ENV_FILE${NC}"
+    set -a
+    . "$ENV_FILE"
+    set +a
+fi
+
+# Defaults
+DEFAULT_MODEL="HuggingFaceTB/SmolLM3-3B"
+MODEL_NAME="${MODEL_NAME:-$DEFAULT_MODEL}"
+
+# Persist HF token to token file if provided via env var
+if [ -n "${HF_TOKEN:-${HUGGINGFACE_TOKEN:-}}" ]; then
+    HF_TOKEN="${HF_TOKEN:-$HUGGINGFACE_TOKEN}"
+    export HF_TOKEN
+    export HUGGINGFACE_TOKEN="$HF_TOKEN"
+    echo "$HF_TOKEN" > "$HOME/.huggingface_token"
+    chmod 600 "$HOME/.huggingface_token"
+    echo -e "${GREEN}HuggingFace token persisted to $HOME/.huggingface_token${NC}"
+else
+    echo -e "${YELLOW}No HF_TOKEN set — skipping token setup (gated models will not be accessible)${NC}"
+fi
+
+# Apply MODEL_NAME to config files if set
+if [ -n "${MODEL_NAME:-}" ]; then
+    for cfg in vllm_config.json default_vllm_config.json; do
+        if [ -f "$cfg" ]; then
+            python3 -c "
+import json
+with open('$cfg') as f:
+    c = json.load(f)
+c['model'] = '$MODEL_NAME'
+with open('$cfg', 'w') as f:
+    json.dump(c, f, indent=2)
+" 2>/dev/null && echo -e "${GREEN}Set model=$MODEL_NAME in $cfg${NC}" \
+             || echo -e "${YELLOW}Warning: could not update model in $cfg${NC}"
+        fi
+    done
+fi
+
+echo -e "${GREEN}Environment:${NC}"
+echo -e "  MODEL_NAME = ${MODEL_NAME}"
+echo -e "  HF_TOKEN   = ${HF_TOKEN:+set (hidden)}${HF_TOKEN:-not set}"
+echo ""
+
 # Step 1: Install vLLM
 echo -e "${YELLOW}Step 1/4: Installing vLLM...${NC}"
 ./install_vllm.sh

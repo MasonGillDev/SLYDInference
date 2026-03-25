@@ -77,6 +77,7 @@ User=root
 Group=root
 WorkingDirectory=/opt/vllm
 Environment="PATH=/opt/vllm-env/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=-/home/ubuntu/.env
 
 # Run the server script with config file
 ExecStart=/opt/vllm/run_vllm_server.sh /opt/vllm/vllm_config.json
