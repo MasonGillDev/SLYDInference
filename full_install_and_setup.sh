@@ -69,7 +69,7 @@ fi
 echo ""
 
 # Step 1: Install vLLM
-echo -e "${YELLOW}Step 1/4: Installing vLLM...${NC}"
+echo -e "${YELLOW}Step 1/5: Installing vLLM...${NC}"
 ./install_vllm.sh
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ vLLM installed successfully${NC}\n"
@@ -78,8 +78,20 @@ else
     exit 1
 fi
 
-# Step 2: Setup vLLM service
-echo -e "${YELLOW}Step 2/4: Setting up vLLM service...${NC}"
+# Step 2: Auto-configure GPU settings (non-fatal)
+echo -e "${YELLOW}Step 2/5: Auto-configuring GPU settings...${NC}"
+if [ -f "auto_config_gpu.py" ]; then
+    source /opt/vllm-env/bin/activate
+    python3 auto_config_gpu.py --config vllm_config.json --defaults default_vllm_config.json && \
+        echo -e "${GREEN}✓ GPU auto-configuration complete${NC}\n" || \
+        echo -e "${YELLOW}⚠ GPU auto-configuration failed — using defaults${NC}\n"
+    deactivate 2>/dev/null || true
+else
+    echo -e "${YELLOW}⚠ auto_config_gpu.py not found — skipping${NC}\n"
+fi
+
+# Step 3: Setup vLLM service
+echo -e "${YELLOW}Step 3/5: Setting up vLLM service...${NC}"
 ./setup_vllm_service.sh
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ vLLM service configured${NC}\n"
@@ -88,8 +100,8 @@ else
     exit 1
 fi
 
-# Step 3: Setup SlydLLMSite
-echo -e "${YELLOW}Step 3/4: Setting up SlydLLMSite...${NC}"
+# Step 4: Setup SlydLLMSite
+echo -e "${YELLOW}Step 4/5: Setting up SlydLLMSite...${NC}"
 ./setup_slydllmsite.sh
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ SlydLLMSite configured${NC}\n"
@@ -98,8 +110,8 @@ else
     exit 1
 fi
 
-# Step 4: Setup nginx
-echo -e "${YELLOW}Step 4/4: Setting up nginx...${NC}"
+# Step 5: Setup nginx
+echo -e "${YELLOW}Step 5/5: Setting up nginx...${NC}"
 ./setup_nginx.sh
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ nginx configured${NC}\n"

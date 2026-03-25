@@ -60,6 +60,7 @@ cp vllm_config.json /opt/vllm/
 cp default_vllm_config.json /opt/vllm
 cp run_vllm_server.sh /opt/vllm/
 cp build_vllm_command.py /opt/vllm/
+cp auto_config_gpu.py /opt/vllm/ 2>/dev/null || true
 chmod +x /opt/vllm/run_vllm_server.sh
 echo -e "${GREEN}✓${NC} Files copied to /opt/vllm"
 
